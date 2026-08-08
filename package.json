@@ -1,0 +1,49 @@
+{
+  "name": "brisas-pos",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sistema de punto de venta para el restaurante Mirador Brisas del Monte (Costa Rica). Corre 100% en la LAN del restaurante.",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "packages/shared",
+    "packages/backend",
+    "packages/frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c cyan,magenta \"npm run dev -w @brisas/backend\" \"npm run dev -w @brisas/frontend\"",
+    "build": "npm run build -w @brisas/shared && npm run build -w @brisas/backend && npm run build -w @brisas/frontend",
+    "test": "npm run test -w @brisas/shared && npm run test -w @brisas/backend",
+    "test:watch": "npm run test:watch -w @brisas/shared",
+    "test:coverage": "npm run test:coverage -w @brisas/shared",
+    "db:generate": "npm run db:generate -w @brisas/backend",
+    "db:migrate": "npm run db:migrate -w @brisas/backend",
+    "db:seed": "npm run build -w @brisas/shared && npm run db:seed -w @brisas/backend",
+    "db:studio": "npm run db:studio -w @brisas/backend",
+    "db:reset": "npm run db:reset -w @brisas/backend",
+    "secreto": "node scripts/generar-secreto.mjs",
+    "secreto:escribir": "node scripts/generar-secreto.mjs --escribir",
+    "lint": "eslint packages --ext .ts,.tsx",
+    "format": "prettier --write \"packages/**/*.{ts,tsx,json,css,md}\"",
+    "typecheck": "npm run typecheck -w @brisas/shared && npm run typecheck -w @brisas/backend && npm run typecheck -w @brisas/frontend",
+    "start:prod": "node packages/backend/dist/main.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "concurrently": "^9.1.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3"
+  },
+  "allowScripts": {
+    "esbuild@0.21.5": true,
+    "@prisma/client@5.22.0": true,
+    "@prisma/engines@5.22.0": true,
+    "prisma@5.22.0": true
+  }
+}

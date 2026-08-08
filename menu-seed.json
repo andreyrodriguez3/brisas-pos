@@ -1,0 +1,1274 @@
+{
+  "_meta": {
+    "restaurante": "Mirador Brisas del Monte",
+    "moneda": "CRC",
+    "fuente": "Fotos del menú publicadas en Google Maps (fechas de imagen: mar 2025 y ago 2026)",
+    "fecha_transcripcion": "2026-08-06",
+    "estado": "PROVISIONAL en precios de platillos — envase e impuestos ya confirmados por la dueña",
+    "notas_criticas": [
+      "Existen DOS versiones del menú en las fotos. Se tomaron los precios de la versión NUEVA (imágenes fechadas ago 2026). Los precios de la versión vieja (mar 2025) se conservan en el campo 'precio_anterior_2025' solo como referencia histórica; NO deben cargarse al sistema.",
+      "Hay 18 productos con rango de precio del tipo '3500-4500'. Se modelaron como DOS VARIANTES del mismo producto. Las etiquetas ('Pequeño'/'Grande', 'Media'/'Entera') son una SUPOSICIÓN. Confirmar con la dueña qué distingue cada precio (tamaño, media/entera, con o sin carne).",
+      "Los platillos que dicen 'con papas o yuca' se modelaron con un grupo de opción obligatorio de selección única, sin costo extra.",
+      "La sección 'Refrescos, cervezas y vinos' aparece SIN precios en la foto. Los productos están listados con precio null y activo=false: no se pueden vender hasta que se les cargue precio.",
+      "CONFIRMADO por la dueña (ago 2026): los precios del menú YA INCLUYEN el IVA 13% y el 10% de servicio. El sistema NO calcula impuestos: el total es la suma simple de las líneas. Ver clave de configuración PRECIOS_INCLUYEN_IMPUESTOS = true.",
+      "CONFIRMADO por la dueña (ago 2026): el envase plástico se cobra a ₡200 por unidad, precio único."
+    ]
+  },
+  "grupos_opcion_compartidos": [
+    {
+      "codigo": "ACOMP_PAPAS_YUCA",
+      "nombre": "Acompañamiento",
+      "obligatorio": true,
+      "min": 1,
+      "max": 1,
+      "opciones": [
+        {
+          "nombre": "Papas",
+          "precio_extra": 0
+        },
+        {
+          "nombre": "Yuca",
+          "precio_extra": 0
+        }
+      ]
+    },
+    {
+      "codigo": "ACOMP_PAPAS_YUCA_PATACON",
+      "nombre": "Acompañamiento",
+      "obligatorio": true,
+      "min": 1,
+      "max": 1,
+      "opciones": [
+        {
+          "nombre": "Papas",
+          "precio_extra": 0
+        },
+        {
+          "nombre": "Yuca",
+          "precio_extra": 0
+        },
+        {
+          "nombre": "Patacón",
+          "precio_extra": 0
+        }
+      ]
+    }
+  ],
+  "categorias": [
+    {
+      "codigo": "BOCAS",
+      "nombre": "Bocas",
+      "orden": 1,
+      "productos": [
+        {
+          "nombre_es": "Patacones",
+          "nombre_en": "Patacones",
+          "variantes": [
+            {
+              "etiqueta": "Pequeño",
+              "precio": 3500
+            },
+            {
+              "etiqueta": "Grande",
+              "precio": 4500
+            }
+          ],
+          "variantes_por_confirmar": true
+        },
+        {
+          "nombre_es": "Chicharrón",
+          "nombre_en": "Pork rinds with yuca",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 3800
+            }
+          ]
+        },
+        {
+          "nombre_es": "Ceviche",
+          "nombre_en": "Ceviche",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 3800
+            }
+          ]
+        },
+        {
+          "nombre_es": "Carne en salsa",
+          "nombre_en": "Meat in sauce",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 3800
+            }
+          ]
+        },
+        {
+          "nombre_es": "Patinachos",
+          "nombre_en": "Patinachos",
+          "variantes": [
+            {
+              "etiqueta": "Pequeño",
+              "precio": 4000
+            },
+            {
+              "etiqueta": "Grande",
+              "precio": 5000
+            }
+          ],
+          "variantes_por_confirmar": true
+        },
+        {
+          "nombre_es": "Taquito de queso",
+          "nombre_en": "Cheese taquito",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 3300
+            }
+          ]
+        },
+        {
+          "nombre_es": "Arroz cantonés (boca)",
+          "nombre_en": "Cantonese rice",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 4000
+            }
+          ],
+          "grupos_opcion": [
+            "ACOMP_PAPAS_YUCA"
+          ]
+        },
+        {
+          "nombre_es": "Alita de pollo",
+          "nombre_en": "Chicken wings",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 3300
+            }
+          ],
+          "grupos_opcion": [
+            "ACOMP_PAPAS_YUCA"
+          ]
+        },
+        {
+          "nombre_es": "Tacos",
+          "nombre_en": "Tacos",
+          "variantes": [
+            {
+              "etiqueta": "Pequeño",
+              "precio": 2800
+            },
+            {
+              "etiqueta": "Grande",
+              "precio": 3500
+            }
+          ],
+          "variantes_por_confirmar": true
+        },
+        {
+          "nombre_es": "Nachos",
+          "nombre_en": "Nachos",
+          "variantes": [
+            {
+              "etiqueta": "Pequeño",
+              "precio": 4000
+            },
+            {
+              "etiqueta": "Grande",
+              "precio": 5000
+            }
+          ],
+          "variantes_por_confirmar": true
+        },
+        {
+          "nombre_es": "Taquito al monte",
+          "nombre_en": "Taquito al monte",
+          "variantes": [
+            {
+              "etiqueta": "Pequeño",
+              "precio": 3000
+            },
+            {
+              "etiqueta": "Grande",
+              "precio": 3500
+            }
+          ],
+          "variantes_por_confirmar": true
+        },
+        {
+          "nombre_es": "Chifrijo (boca)",
+          "nombre_en": "Chifrijo",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 4000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Arroz con camarones (boca)",
+          "nombre_en": "Rice with shrimp",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 4000
+            }
+          ],
+          "grupos_opcion": [
+            "ACOMP_PAPAS_YUCA"
+          ]
+        },
+        {
+          "nombre_es": "Burrito",
+          "nombre_en": "Burrito",
+          "variantes": [
+            {
+              "etiqueta": "Pequeño",
+              "precio": 3500
+            },
+            {
+              "etiqueta": "Grande",
+              "precio": 4000
+            }
+          ],
+          "variantes_por_confirmar": true
+        },
+        {
+          "nombre_es": "Chalupas",
+          "nombre_en": "Chalupas",
+          "variantes": [
+            {
+              "etiqueta": "Pequeño",
+              "precio": 3500
+            },
+            {
+              "etiqueta": "Grande",
+              "precio": 4000
+            }
+          ],
+          "variantes_por_confirmar": true
+        },
+        {
+          "nombre_es": "Papinachos",
+          "nombre_en": "Papinachos",
+          "variantes": [
+            {
+              "etiqueta": "Pequeño",
+              "precio": 4000
+            },
+            {
+              "etiqueta": "Grande",
+              "precio": 5000
+            }
+          ],
+          "variantes_por_confirmar": true
+        }
+      ]
+    },
+    {
+      "codigo": "PLATOS_FUERTES",
+      "nombre": "Platos fuertes",
+      "orden": 2,
+      "productos": [
+        {
+          "nombre_es": "Pechuga a la plancha",
+          "nombre_en": "Grilled chicken breast",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 5000
+            }
+          ],
+          "grupos_opcion": [
+            "ACOMP_PAPAS_YUCA"
+          ],
+          "precio_anterior_2025": 4500
+        },
+        {
+          "nombre_es": "Pechuga a la plancha en salsa blanca con hongos",
+          "nombre_en": "Grilled breast in white sauce with mushrooms",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 5500
+            }
+          ],
+          "grupos_opcion": [
+            "ACOMP_PAPAS_YUCA"
+          ],
+          "precio_anterior_2025": 5000
+        },
+        {
+          "nombre_es": "Cordon Bleu",
+          "nombre_en": "Cordon Bleu",
+          "variantes": [
+            {
+              "etiqueta": "Pequeño",
+              "precio": 4500
+            },
+            {
+              "etiqueta": "Grande",
+              "precio": 5800
+            }
+          ],
+          "grupos_opcion": [
+            "ACOMP_PAPAS_YUCA"
+          ],
+          "variantes_por_confirmar": true,
+          "precio_anterior_2025": "4000 / 5000"
+        },
+        {
+          "nombre_es": "Camarón empanizado",
+          "nombre_en": "Breaded shrimp",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 7000
+            }
+          ],
+          "grupos_opcion": [
+            "ACOMP_PAPAS_YUCA"
+          ],
+          "precio_anterior_2025": 6500
+        },
+        {
+          "nombre_es": "Camarón al ajillo",
+          "nombre_en": "Shrimp with garlic",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 7000
+            }
+          ],
+          "grupos_opcion": [
+            "ACOMP_PAPAS_YUCA"
+          ],
+          "precio_anterior_2025": 6500
+        },
+        {
+          "nombre_es": "Filete de pescado",
+          "nombre_en": "Fish fillet",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 5000
+            }
+          ],
+          "grupos_opcion": [
+            "ACOMP_PAPAS_YUCA"
+          ],
+          "precio_anterior_2025": 4500
+        },
+        {
+          "nombre_es": "Costilla a la BBQ",
+          "nombre_en": "BBQ rib",
+          "variantes": [
+            {
+              "etiqueta": "Pequeño",
+              "precio": 4800
+            },
+            {
+              "etiqueta": "Grande",
+              "precio": 5800
+            }
+          ],
+          "grupos_opcion": [
+            "ACOMP_PAPAS_YUCA"
+          ],
+          "variantes_por_confirmar": true,
+          "precio_anterior_2025": "4600 / 5000"
+        },
+        {
+          "nombre_es": "Plato de chicharrón",
+          "nombre_en": "Plate of pork rinds",
+          "variantes": [
+            {
+              "etiqueta": "Pequeño",
+              "precio": 7500
+            },
+            {
+              "etiqueta": "Grande",
+              "precio": 9000
+            }
+          ],
+          "grupos_opcion": [
+            "ACOMP_PAPAS_YUCA"
+          ],
+          "variantes_por_confirmar": true,
+          "precio_anterior_2025": "7000 / 8500"
+        },
+        {
+          "nombre_es": "Surtida",
+          "nombre_en": "Assorted platter",
+          "descripcion": "Pollo, pescado, chicharrón, papa, yuca, tortilla de queso, frijoles molidos, patacones, ceviche de banano",
+          "variantes": [
+            {
+              "etiqueta": "Pequeña",
+              "precio": 9000
+            },
+            {
+              "etiqueta": "Grande",
+              "precio": 12000
+            }
+          ],
+          "variantes_por_confirmar": true,
+          "precio_anterior_2025": "8800 / 10800"
+        },
+        {
+          "nombre_es": "Pescado entero",
+          "nombre_en": "Whole fish",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 7000
+            }
+          ],
+          "grupos_opcion": [
+            "ACOMP_PAPAS_YUCA_PATACON"
+          ],
+          "precio_anterior_2025": 6500
+        },
+        {
+          "nombre_es": "Picadillo de arracache",
+          "nombre_en": "Arracache picadillo",
+          "variantes": [
+            {
+              "etiqueta": "Pequeño",
+              "precio": 3300
+            },
+            {
+              "etiqueta": "Grande",
+              "precio": 4300
+            }
+          ],
+          "variantes_por_confirmar": true,
+          "precio_anterior_2025": "2900 / 3900"
+        },
+        {
+          "nombre_es": "Sopa azteca",
+          "nombre_en": "Aztec soup",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 4500
+            }
+          ],
+          "precio_anterior_2025": 4000
+        },
+        {
+          "nombre_es": "Fajitas de pollo",
+          "nombre_en": "Chicken fajitas",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 4500
+            }
+          ],
+          "grupos_opcion": [
+            "ACOMP_PAPAS_YUCA"
+          ],
+          "precio_anterior_2025": 4300
+        },
+        {
+          "nombre_es": "Alitas en BBQ",
+          "nombre_en": "BBQ wings",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 5000
+            }
+          ],
+          "grupos_opcion": [
+            "ACOMP_PAPAS_YUCA"
+          ],
+          "precio_anterior_2025": 4000
+        }
+      ]
+    },
+    {
+      "codigo": "ARROCES",
+      "nombre": "Arroces",
+      "orden": 3,
+      "productos": [
+        {
+          "nombre_es": "Arroz con camarón",
+          "nombre_en": "Rice with shrimp",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 5500
+            }
+          ],
+          "grupos_opcion": [
+            "ACOMP_PAPAS_YUCA"
+          ],
+          "precio_anterior_2025": 5000
+        },
+        {
+          "nombre_es": "Arroz cantonés",
+          "nombre_en": "Cantonese rice",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 5500
+            }
+          ],
+          "grupos_opcion": [
+            "ACOMP_PAPAS_YUCA"
+          ],
+          "precio_anterior_2025": 5000
+        },
+        {
+          "nombre_es": "Arroz con carne en salsa",
+          "nombre_en": "Rice with meat in sauce",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 5500
+            }
+          ],
+          "grupos_opcion": [
+            "ACOMP_PAPAS_YUCA"
+          ],
+          "precio_anterior_2025": 5000
+        },
+        {
+          "nombre_es": "Casado",
+          "nombre_en": "Casado",
+          "descripcion": "A escoger: carne en salsa, fajitas de pollo, pollo frito, filete, chuleta o pechuga a la plancha",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 4500
+            }
+          ],
+          "grupos_opcion": [
+            "CASADO_PROTEINA"
+          ],
+          "precio_anterior_2025": 4000
+        }
+      ]
+    },
+    {
+      "codigo": "COMIDAS_RAPIDAS",
+      "nombre": "Comidas rápidas",
+      "orden": 4,
+      "productos": [
+        {
+          "nombre_es": "Empanada",
+          "nombre_en": "Empanada",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 3500
+            }
+          ],
+          "grupos_opcion": [
+            "EMPANADA_RELLENO"
+          ],
+          "precio_anterior_2025": 2500,
+          "nota": "En el menú viejo cada relleno era un producto aparte a ₡2500. En el nuevo es un solo producto a ₡3500 con relleno a escoger."
+        },
+        {
+          "nombre_es": "Hamburguesa de pechuga",
+          "nombre_en": "Chicken breast burger",
+          "variantes": [
+            {
+              "etiqueta": "Pequeña",
+              "precio": 3500
+            },
+            {
+              "etiqueta": "Grande",
+              "precio": 4500
+            }
+          ],
+          "variantes_por_confirmar": true
+        },
+        {
+          "nombre_es": "Hamburguesa",
+          "nombre_en": "Hamburger",
+          "variantes": [
+            {
+              "etiqueta": "Pequeña",
+              "precio": 3000
+            },
+            {
+              "etiqueta": "Grande",
+              "precio": 4000
+            }
+          ],
+          "variantes_por_confirmar": true,
+          "precio_anterior_2025": "2800 / 3500"
+        },
+        {
+          "nombre_es": "Chorreadas",
+          "nombre_en": "Chorreadas",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 3500
+            }
+          ],
+          "precio_anterior_2025": 2500
+        },
+        {
+          "nombre_es": "Sándwich de carne",
+          "nombre_en": "Meat sandwich",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 3800
+            }
+          ],
+          "precio_anterior_2025": 3200
+        },
+        {
+          "nombre_es": "Tortilla de queso",
+          "nombre_en": "Cheese tortilla",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 3500
+            }
+          ],
+          "precio_anterior_2025": 2500
+        },
+        {
+          "nombre_es": "Tamales",
+          "nombre_en": "Tamales",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 1200
+            }
+          ]
+        },
+        {
+          "nombre_es": "Salchipapas",
+          "nombre_en": "Salchipapas",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 3000
+            }
+          ],
+          "activo": false,
+          "nota": "Aparece en el menú viejo a ₡3000 y en el menú infantil nuevo a ₡3500. No aparece en la sección de comidas rápidas del menú nuevo. CONFIRMAR si sigue vendiéndose para adultos."
+        }
+      ]
+    },
+    {
+      "codigo": "FUENTES",
+      "nombre": "Fuentes",
+      "orden": 5,
+      "nota": "Versión grande / para compartir de las bocas del mismo nombre.",
+      "productos": [
+        {
+          "nombre_es": "Chifrijo (fuente)",
+          "nombre_en": "Chifrijo",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 5200
+            }
+          ]
+        },
+        {
+          "nombre_es": "Ceviche (fuente)",
+          "nombre_en": "Ceviche",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 5000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Carne en salsa (fuente)",
+          "nombre_en": "Meat in sauce",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 5200
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "codigo": "KIDS",
+      "nombre": "Menú infantil",
+      "orden": 6,
+      "productos": [
+        {
+          "nombre_es": "Perro caliente (kids)",
+          "nombre_en": "Hot dog",
+          "variantes": [
+            {
+              "etiqueta": "Pequeño",
+              "precio": 2500
+            },
+            {
+              "etiqueta": "Grande",
+              "precio": 3500
+            }
+          ],
+          "variantes_por_confirmar": true
+        },
+        {
+          "nombre_es": "Hamburguesa (kids)",
+          "nombre_en": "Kids burger",
+          "descripcion": "Torta de pollo o carne",
+          "variantes": [
+            {
+              "etiqueta": "Pequeña",
+              "precio": 3000
+            },
+            {
+              "etiqueta": "Grande",
+              "precio": 4000
+            }
+          ],
+          "grupos_opcion": [
+            "KIDS_TORTA"
+          ],
+          "variantes_por_confirmar": true
+        },
+        {
+          "nombre_es": "Fajitas de pollo (kids)",
+          "nombre_en": "Chicken fajitas",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 3500
+            }
+          ]
+        },
+        {
+          "nombre_es": "Salchipapas (kids)",
+          "nombre_en": "Sausage & potatoes",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 3500
+            }
+          ]
+        },
+        {
+          "nombre_es": "Pescado (kids)",
+          "nombre_en": "Fish",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 3800
+            }
+          ]
+        },
+        {
+          "nombre_es": "Papas o yuca (kids)",
+          "nombre_en": "Potato or yuca",
+          "variantes": [
+            {
+              "etiqueta": "Pequeño",
+              "precio": 2000
+            },
+            {
+              "etiqueta": "Grande",
+              "precio": 3000
+            }
+          ],
+          "grupos_opcion": [
+            "ACOMP_PAPAS_YUCA"
+          ],
+          "variantes_por_confirmar": true
+        }
+      ]
+    },
+    {
+      "codigo": "BEBIDAS_CALIENTES",
+      "nombre": "Bebidas calientes",
+      "orden": 7,
+      "productos": [
+        {
+          "nombre_es": "Café",
+          "nombre_en": "Coffee",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 1000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Café con leche",
+          "nombre_en": "Coffee with milk",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 1200
+            }
+          ]
+        },
+        {
+          "nombre_es": "Chocolate",
+          "nombre_en": "Hot chocolate",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 1200
+            }
+          ]
+        },
+        {
+          "nombre_es": "Té negro",
+          "nombre_en": "Black tea",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 1000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Té de manzanilla",
+          "nombre_en": "Chamomile tea",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 1000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Agua dulce",
+          "nombre_en": "Agua dulce",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 1000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Agua dulce con leche",
+          "nombre_en": "Agua dulce with milk",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 1200
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "codigo": "BATIDOS",
+      "nombre": "Batidos",
+      "orden": 8,
+      "nota": "Todos a ₡1300 y ₡1800. En la foto aparece como '1300 / 1800'. Se asume 1300 = en agua y 1800 = en leche, modelado como dos variantes para que el precio quede explícito. CONFIRMAR con la dueña.",
+      "productos": [
+        {
+          "nombre_es": "Batido de crema",
+          "nombre_en": "Cream shake",
+          "variantes": [
+            {
+              "etiqueta": "En agua",
+              "precio": 1300
+            },
+            {
+              "etiqueta": "En leche",
+              "precio": 1800
+            }
+          ]
+        },
+        {
+          "nombre_es": "Batido de mora",
+          "nombre_en": "Blackberry shake",
+          "variantes": [
+            {
+              "etiqueta": "En agua",
+              "precio": 1300
+            },
+            {
+              "etiqueta": "En leche",
+              "precio": 1800
+            }
+          ]
+        },
+        {
+          "nombre_es": "Batido de fresa",
+          "nombre_en": "Strawberry shake",
+          "variantes": [
+            {
+              "etiqueta": "En agua",
+              "precio": 1300
+            },
+            {
+              "etiqueta": "En leche",
+              "precio": 1800
+            }
+          ]
+        },
+        {
+          "nombre_es": "Batido de papaya",
+          "nombre_en": "Papaya shake",
+          "variantes": [
+            {
+              "etiqueta": "En agua",
+              "precio": 1300
+            },
+            {
+              "etiqueta": "En leche",
+              "precio": 1800
+            }
+          ]
+        },
+        {
+          "nombre_es": "Batido de guanábana",
+          "nombre_en": "Soursop shake",
+          "variantes": [
+            {
+              "etiqueta": "En agua",
+              "precio": 1300
+            },
+            {
+              "etiqueta": "En leche",
+              "precio": 1800
+            }
+          ]
+        },
+        {
+          "nombre_es": "Batido de piña",
+          "nombre_en": "Pineapple shake",
+          "variantes": [
+            {
+              "etiqueta": "En agua",
+              "precio": 1300
+            },
+            {
+              "etiqueta": "En leche",
+              "precio": 1800
+            }
+          ]
+        },
+        {
+          "nombre_es": "Batido de chocolate",
+          "nombre_en": "Chocolate shake",
+          "variantes": [
+            {
+              "etiqueta": "En agua",
+              "precio": 1300
+            },
+            {
+              "etiqueta": "En leche",
+              "precio": 1800
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "codigo": "REFRESCOS_LICORES",
+      "nombre": "Refrescos, cervezas y vinos",
+      "orden": 9,
+      "nota": "SIN PRECIOS EN LA FOTO. Todos entran con activo=false hasta que la dueña entregue la lista de precios.",
+      "productos": [
+        {
+          "nombre_es": "Cerveza Imperial",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": null
+            }
+          ],
+          "activo": false
+        },
+        {
+          "nombre_es": "Cerveza Pilsen",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": null
+            }
+          ],
+          "activo": false
+        },
+        {
+          "nombre_es": "Cerveza Rock Ice",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": null
+            }
+          ],
+          "activo": false
+        },
+        {
+          "nombre_es": "Cerveza Bavaria",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": null
+            }
+          ],
+          "activo": false
+        },
+        {
+          "nombre_es": "Cerveza Heineken",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": null
+            }
+          ],
+          "activo": false
+        },
+        {
+          "nombre_es": "Jugo de tomate",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": null
+            }
+          ],
+          "activo": false
+        },
+        {
+          "nombre_es": "Vino Riunite",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": null
+            }
+          ],
+          "activo": false
+        },
+        {
+          "nombre_es": "Vino blanco",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": null
+            }
+          ],
+          "activo": false
+        },
+        {
+          "nombre_es": "Vino tinto",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": null
+            }
+          ],
+          "activo": false
+        },
+        {
+          "nombre_es": "Tropical",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": null
+            }
+          ],
+          "activo": false
+        },
+        {
+          "nombre_es": "Gaseosa",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": null
+            }
+          ],
+          "activo": false
+        }
+      ]
+    },
+    {
+      "codigo": "EXTRAS",
+      "nombre": "Extras",
+      "orden": 10,
+      "productos": [
+        {
+          "nombre_es": "Chimichurri",
+          "nombre_en": "Chimichurri",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 500
+            }
+          ]
+        },
+        {
+          "nombre_es": "Frijol",
+          "nombre_en": "Beans",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 500
+            }
+          ]
+        },
+        {
+          "nombre_es": "Arroz",
+          "nombre_en": "Rice",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 500
+            }
+          ]
+        },
+        {
+          "nombre_es": "Papas",
+          "nombre_en": "Potatoes",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 1000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Yucas",
+          "nombre_en": "Yucca",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 1000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "codigo": "DULCE",
+      "nombre": "Dulce",
+      "orden": 11,
+      "productos": [
+        {
+          "nombre_es": "Cajeta de maní",
+          "nombre_en": "Peanut cajeta",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 300
+            }
+          ]
+        },
+        {
+          "nombre_es": "Cajeta de tricopilia",
+          "nombre_en": "Tricopilia cajeta",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 300
+            }
+          ],
+          "nota": "Nombre transcrito literal de la foto; verificar ortografía correcta."
+        }
+      ]
+    },
+    {
+      "codigo": "ENVASES",
+      "nombre": "Envases y empaque",
+      "orden": 99,
+      "es_categoria_envases": true,
+      "nota": "Confirmado por la dueña (ago 2026): el envase se cobra a ₡200 por unidad, precio único sin importar el tamaño. Se cobra tanto en pedidos estrictamente para llevar como cuando a un cliente del salón le sobra y pide llevárselo. El ingreso por envases se contabiliza aparte, como recuperación de empaque, no como venta de comida.",
+      "productos": [
+        {
+          "nombre_es": "Envase plástico",
+          "nombre_en": "Plastic container",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 200
+            }
+          ],
+          "es_envase": true,
+          "cobro_automatico": true
+        }
+      ]
+    }
+  ],
+  "grupos_opcion_adicionales": [
+    {
+      "codigo": "CASADO_PROTEINA",
+      "nombre": "Proteína del casado",
+      "obligatorio": true,
+      "min": 1,
+      "max": 1,
+      "opciones": [
+        {
+          "nombre": "Carne en salsa",
+          "precio_extra": 0
+        },
+        {
+          "nombre": "Fajitas de pollo",
+          "precio_extra": 0
+        },
+        {
+          "nombre": "Pollo frito",
+          "precio_extra": 0
+        },
+        {
+          "nombre": "Filete",
+          "precio_extra": 0
+        },
+        {
+          "nombre": "Chuleta",
+          "precio_extra": 0
+        },
+        {
+          "nombre": "Pechuga a la plancha",
+          "precio_extra": 0
+        }
+      ]
+    },
+    {
+      "codigo": "EMPANADA_RELLENO",
+      "nombre": "Relleno",
+      "obligatorio": true,
+      "min": 1,
+      "max": 1,
+      "opciones": [
+        {
+          "nombre": "Frijol",
+          "precio_extra": 0
+        },
+        {
+          "nombre": "Carne",
+          "precio_extra": 0
+        },
+        {
+          "nombre": "Queso",
+          "precio_extra": 0
+        }
+      ]
+    },
+    {
+      "codigo": "KIDS_TORTA",
+      "nombre": "Torta",
+      "obligatorio": true,
+      "min": 1,
+      "max": 1,
+      "opciones": [
+        {
+          "nombre": "Pollo",
+          "precio_extra": 0
+        },
+        {
+          "nombre": "Carne",
+          "precio_extra": 0
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,497 @@
+// ═══════════════════════════════════════════════════════════════════════════
+//  Brisas POS — modelo de datos
+//
+//  Convenciones:
+//  · Modelos en PascalCase (los mapea `@@map` a tablas snake_case en español).
+//  · Campos en snake_case español, idénticos al plan de trabajo. El código se
+//    lee junto al negocio: `cuenta.canal`, `linea.precio_unit_snapshot`.
+//  · TODO monto es Int de colones. Jamás Float. El colón no tiene subdivisión
+//    en uso y los decimales binarios harían que el cierre no cuadre.
+//  · Nada se borra físicamente: `activo` / `anulada`.
+//  · Las fechas las pone SIEMPRE el servidor, nunca el cliente.
+// ═══════════════════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ── Sobre los enums ────────────────────────────────────────────────────────
+//
+//  El conector SQLite de Prisma NO soporta `enum`. Los campos enumerados se
+//  guardan como String y su lista de valores válidos vive en UN solo lugar:
+//  `@brisas/shared/types/enums.ts` (Rol, CanalCuenta, EstadoCuenta,
+//  EstadoPedido, EstadoLinea, EstadoTurno, TipoDescuento, ModoDivision,
+//  FormaPago, ReglaReparto).
+//
+//  La validación la hacen los schemas Zod de `@brisas/shared/schemas`, que
+//  corren en el ZodValidationPipe de cada endpoint. Un valor inválido no llega
+//  nunca a la base de datos.
+//
+//  Al leer, casteá al tipo de shared:  `cuenta.canal as CanalCuenta`.
+//
+// ───────────────────────────────────────────────────────────────────────────
+
+// ── Usuarias y turnos ──────────────────────────────────────────────────────
+
+model Usuario {
+  id        Int      @id @default(autoincrement())
+  nombre    String   @unique
+  pin_hash  String
+  rol       String
+  /// Sale de PALETA_MESERAS. Identifica sus cuentas en las tres pantallas.
+  /// NUNCA es la única señal: siempre va con el nombre en texto legible.
+  color_hex String
+  activo    Boolean  @default(true)
+  creado_en DateTime @default(now())
+
+  /// Bloqueo tras N intentos de PIN fallidos (ver .env).
+  intentos_fallidos Int       @default(0)
+  bloqueado_hasta   DateTime?
+
+  turnos_abiertos     Turno[]        @relation("TurnoAbiertoPor")
+  turnos_cerrados     Turno[]        @relation("TurnoCerradoPor")
+  turnos_trabajados   TurnoMesera[]
+  cuentas_responsable Cuenta[]       @relation("CuentaResponsable")
+  cuentas_abiertas    Cuenta[]       @relation("CuentaAbiertaPor")
+  pedidos_creados     Pedido[]
+  auditorias          Auditoria[]
+  descuentos          Descuento[]
+  pagos               Pago[]
+  cierres_mesera      CierreMesera[]
+
+  @@index([activo, rol])
+  @@map("usuario")
+}
+
+model Turno {
+  id             Int       @id @default(autoincrement())
+  /// Día del turno en formato YYYY-MM-DD (hora local de Costa Rica).
+  fecha          String
+  abierto_en     DateTime  @default(now())
+  abierto_por_id Int
+  cerrado_en     DateTime?
+  cerrado_por_id Int?
+  estado         String    @default("ABIERTO")
+
+  abierto_por Usuario       @relation("TurnoAbiertoPor", fields: [abierto_por_id], references: [id])
+  cerrado_por Usuario?      @relation("TurnoCerradoPor", fields: [cerrado_por_id], references: [id])
+  meseras     TurnoMesera[]
+  cuentas     Cuenta[]
+  cierre      CierreDia?
+
+  @@index([fecha, estado])
+  @@map("turno")
+}
+
+/// Entrada y salida de cada mesera. Se puede dar de alta o baja a mitad de turno.
+/// De acá salen las horas trabajadas que alimentan la regla de reparto HORAS.
+model TurnoMesera {
+  id           Int       @id @default(autoincrement())
+  turno_id     Int
+  usuario_id   Int
+  hora_entrada DateTime
+  hora_salida  DateTime?
+
+  turno   Turno   @relation(fields: [turno_id], references: [id], onDelete: Cascade)
+  usuario Usuario @relation(fields: [usuario_id], references: [id])
+
+  @@unique([turno_id, usuario_id])
+  @@map("turno_mesera")
+}
+
+// ── Menú ───────────────────────────────────────────────────────────────────
+
+model Categoria {
+  id     Int     @id @default(autoincrement())
+  codigo String  @unique
+  nombre String
+  orden  Int     @default(0)
+  activo Boolean @default(true)
+
+  productos Producto[]
+
+  @@map("categoria")
+}
+
+model Producto {
+  id           Int     @id @default(autoincrement())
+  categoria_id Int
+  nombre_es    String
+  nombre_en    String?
+  descripcion  String?
+  activo       Boolean @default(true)
+  /// "Agotado hoy": se muestra pero no se puede pedir.
+  agotado      Boolean @default(false)
+  orden        Int     @default(0)
+  /// El envase plástico. Sus líneas van SIEMPRE al totalizador ENVASES.
+  es_envase    Boolean @default(false)
+
+  categoria Categoria       @relation(fields: [categoria_id], references: [id])
+  variantes Variante[]
+  grupos    ProductoGrupo[]
+  lineas    PedidoLinea[]
+
+  @@unique([categoria_id, nombre_es])
+  @@index([activo, orden])
+  @@map("producto")
+}
+
+model Variante {
+  id             Int     @id @default(autoincrement())
+  producto_id    Int
+  etiqueta       String
+  /// null = sin precio cargado. El producto NO se puede vender.
+  /// (Las 11 bebidas de la sección "Refrescos, cervezas y vinos" entran así.)
+  precio_colones Int?
+  orden          Int     @default(0)
+  activo         Boolean @default(true)
+
+  producto Producto      @relation(fields: [producto_id], references: [id], onDelete: Cascade)
+  lineas   PedidoLinea[]
+
+  @@unique([producto_id, etiqueta])
+  @@map("variante")
+}
+
+model GrupoOpcion {
+  id          Int     @id @default(autoincrement())
+  codigo      String  @unique
+  nombre      String
+  obligatorio Boolean @default(false)
+  min_sel     Int     @default(0)
+  max_sel     Int     @default(1)
+
+  opciones  Opcion[]
+  productos ProductoGrupo[]
+
+  @@map("grupo_opcion")
+}
+
+model Opcion {
+  id              Int     @id @default(autoincrement())
+  grupo_opcion_id Int
+  nombre          String
+  precio_extra    Int     @default(0)
+  activo          Boolean @default(true)
+
+  grupo  GrupoOpcion   @relation(fields: [grupo_opcion_id], references: [id], onDelete: Cascade)
+  lineas LineaOpcion[]
+
+  @@unique([grupo_opcion_id, nombre])
+  @@map("opcion")
+}
+
+model ProductoGrupo {
+  producto_id     Int
+  grupo_opcion_id Int
+
+  producto Producto    @relation(fields: [producto_id], references: [id], onDelete: Cascade)
+  grupo    GrupoOpcion @relation(fields: [grupo_opcion_id], references: [id], onDelete: Cascade)
+
+  @@id([producto_id, grupo_opcion_id])
+  @@map("producto_grupo")
+}
+
+// ── Cuentas ────────────────────────────────────────────────────────────────
+
+/// El restaurante NO usa números de mesa: la cuenta se identifica por el nombre
+/// del cliente. Puede haber nombres repetidos en el mismo turno; se desambiguan
+/// con la hora de apertura y el color de la mesera.
+model Cuenta {
+  id       Int    @id @default(autoincrement())
+  turno_id Int
+  /// ⚠️ CLASIFICA INGRESOS. Se fija al abrir y NO cambia nunca.
+  /// No confundir con `PedidoLinea.para_llevar`, que solo cobra el envase.
+  canal    String @default("SALON")
+
+  nombre_cliente String
+  referencia     String?
+  /// Obligatorios en PARA_LLEVAR.
+  telefono       String?
+  hora_retiro    DateTime?
+
+  /// null en PARA_LLEVAR: normalmente la abre caja, que contesta el teléfono.
+  /// Solo cambia con la acción explícita "Traspasar cuenta", que se audita.
+  mesera_responsable_id Int?
+  estado                String    @default("ABIERTA")
+  abierta_en            DateTime  @default(now())
+  cerrada_en            DateTime?
+  abierta_por_id        Int
+
+  turno              Turno       @relation(fields: [turno_id], references: [id])
+  mesera_responsable Usuario?    @relation("CuentaResponsable", fields: [mesera_responsable_id], references: [id])
+  abierta_por        Usuario     @relation("CuentaAbiertaPor", fields: [abierta_por_id], references: [id])
+  pedidos            Pedido[]
+  comensales         Comensal[]
+  descuentos         Descuento[]
+  pagos              Pago[]
+  divisiones         Division[]
+  auditorias         Auditoria[]
+
+  @@index([turno_id, estado])
+  @@index([estado, canal])
+  @@map("cuenta")
+}
+
+/// "Comensal 1", "Comensal 2"… para la división por consumo.
+model Comensal {
+  id        Int    @id @default(autoincrement())
+  cuenta_id Int
+  etiqueta  String
+  orden     Int    @default(0)
+
+  cuenta Cuenta          @relation(fields: [cuenta_id], references: [id], onDelete: Cascade)
+  lineas LineaComensal[]
+
+  @@map("comensal")
+}
+
+// ── Pedidos ────────────────────────────────────────────────────────────────
+
+/// Una cuenta es un CONTENEDOR de pedidos. Cada pedido entra a cocina como una
+/// comanda nueva e independiente.
+model Pedido {
+  id              Int    @id @default(autoincrement())
+  cuenta_id       Int
+  /// Día del pedido en formato YYYY-MM-DD. Lo pone el servidor.
+  /// DECISIÓN: se guarda en el pedido (y no solo en el turno) para poder
+  /// garantizar por unicidad que no haya dos comandas con el mismo número el
+  /// mismo día — cocina y caja se refieren a las comandas por ese número.
+  dia             String
+  consecutivo_dia Int
+
+  creado_por_id Int
+  creado_en     DateTime @default(now())
+  estado        String   @default("ENVIADO")
+  /// true si la cuenta YA tenía pedidos. Cocina lo pinta con la banda naranja
+  /// AGREGADO. Lo deduce el servidor, nunca lo manda el cliente.
+  es_agregado   Boolean  @default(false)
+
+  /// Clave que genera el celular ANTES de mandar el pedido.
+  /// Es lo que hace segura la cola offline: si el teléfono reintenta porque no
+  /// llegó a ver la respuesta, el servidor reconoce el reenvío y devuelve la
+  /// comanda que ya creó, en vez de mandarle el pedido dos veces a la cocina.
+  idempotencia_key String? @unique
+
+  cuenta     Cuenta        @relation(fields: [cuenta_id], references: [id], onDelete: Cascade)
+  creado_por Usuario       @relation(fields: [creado_por_id], references: [id])
+  lineas     PedidoLinea[]
+  auditorias Auditoria[]
+
+  @@unique([dia, consecutivo_dia])
+  @@index([estado, creado_en])
+  @@map("pedido")
+}
+
+model PedidoLinea {
+  id          Int @id @default(autoincrement())
+  pedido_id   Int
+  producto_id Int
+  variante_id Int
+  cantidad    Int
+
+  /// ⚠️ PRECIO CONGELADO al crear la línea. Se copia del menú UNA vez y jamás
+  /// se vuelve a leer el menú para recalcular. Si la dueña sube un precio a
+  /// media tarde, las cuentas ya abiertas no cambian.
+  precio_unit_snapshot Int
+
+  nota String?
+
+  /// ⚠️⚠️ SOLO DISPARA EL CARGO DEL ENVASE DE ₡200. ⚠️⚠️
+  /// NO clasifica ingresos. Que a un cliente del salón le sobre comida y se la
+  /// lleve no convierte esa venta en "para llevar": se vendió y se sirvió en el
+  /// salón. La clasificación contable la hace `Cuenta.canal`, SIEMPRE.
+  para_llevar Boolean @default(false)
+
+  anulada      Boolean @default(false)
+  estado_linea String  @default("ENVIADO")
+
+  pedido     Pedido          @relation(fields: [pedido_id], references: [id], onDelete: Cascade)
+  producto   Producto        @relation(fields: [producto_id], references: [id])
+  variante   Variante        @relation(fields: [variante_id], references: [id])
+  opciones   LineaOpcion[]
+  comensales LineaComensal[]
+  auditorias Auditoria[]
+
+  @@index([pedido_id])
+  @@map("pedido_linea")
+}
+
+model LineaOpcion {
+  id                    Int    @id @default(autoincrement())
+  linea_id              Int
+  opcion_id             Int
+  /// Snapshots: la comanda debe poder reimprimirse aunque la opción se renombre
+  /// o se desactive después.
+  nombre_snapshot       String
+  precio_extra_snapshot Int    @default(0)
+
+  linea  PedidoLinea @relation(fields: [linea_id], references: [id], onDelete: Cascade)
+  opcion Opcion      @relation(fields: [opcion_id], references: [id])
+
+  @@map("linea_opcion")
+}
+
+/// Asignación de una línea a un comensal, para la división "cada quien lo suyo".
+model LineaComensal {
+  id          Int   @id @default(autoincrement())
+  linea_id    Int
+  comensal_id Int
+  /// Parte de la línea que le toca a este comensal; las fracciones de una línea
+  /// suman 1. Permite compartir (tres personas se parten una picada).
+  /// NO es dinero: al cobrar, el monto se reparte con `repartirPorPesos` sobre
+  /// enteros, para que las partes sumen exactamente el total de la línea.
+  fraccion    Float @default(1)
+
+  linea    PedidoLinea @relation(fields: [linea_id], references: [id], onDelete: Cascade)
+  comensal Comensal    @relation(fields: [comensal_id], references: [id], onDelete: Cascade)
+
+  @@unique([linea_id, comensal_id])
+  @@map("linea_comensal")
+}
+
+// ── Auditoría ──────────────────────────────────────────────────────────────
+
+/// APPEND-ONLY. No existe endpoint ni servicio de update o delete sobre esta
+/// tabla, y no debe crearse ninguno. Toda mutación de cuenta, pedido o línea
+/// escribe acá: quién, qué, cuándo, JSON de antes y después.
+model Auditoria {
+  id           Int      @id @default(autoincrement())
+  cuenta_id    Int?
+  pedido_id    Int?
+  linea_id     Int?
+  usuario_id   Int
+  /// Valor de AccionAuditoria. String y no enum a propósito: el registro de
+  /// auditoría nunca debe rechazar una escritura por una acción no prevista.
+  accion       String
+  antes_json   String?
+  despues_json String?
+  motivo       String?
+  creado_en    DateTime @default(now())
+
+  cuenta  Cuenta?      @relation(fields: [cuenta_id], references: [id])
+  pedido  Pedido?      @relation(fields: [pedido_id], references: [id])
+  linea   PedidoLinea? @relation(fields: [linea_id], references: [id])
+  usuario Usuario      @relation(fields: [usuario_id], references: [id])
+
+  @@index([cuenta_id, creado_en])
+  @@index([usuario_id, creado_en])
+  @@index([accion, creado_en])
+  @@map("auditoria")
+}
+
+// ── Cobro ──────────────────────────────────────────────────────────────────
+
+model Descuento {
+  id                Int      @id @default(autoincrement())
+  cuenta_id         Int
+  tipo              String
+  /// Colones si MONTO, porcentaje 0–100 si PORCENTAJE, total de la cuenta si CORTESIA.
+  valor             Int
+  /// Obligatorio, siempre. Y auditado.
+  motivo            String
+  autorizado_por_id Int
+  creado_en         DateTime @default(now())
+
+  cuenta         Cuenta  @relation(fields: [cuenta_id], references: [id], onDelete: Cascade)
+  autorizado_por Usuario @relation(fields: [autorizado_por_id], references: [id])
+
+  @@map("descuento")
+}
+
+model Division {
+  id        Int    @id @default(autoincrement())
+  cuenta_id Int
+  modo      String
+  n_partes  Int?
+
+  cuenta Cuenta @relation(fields: [cuenta_id], references: [id], onDelete: Cascade)
+  pagos  Pago[]
+
+  @@map("division")
+}
+
+model Pago {
+  id                Int      @id @default(autoincrement())
+  cuenta_id         Int
+  division_id       Int?
+  parte_num         Int?
+  monto             Int
+  /// Dato informativo. El sistema NO procesa cobros: el datáfono y el SINPE
+  /// siguen funcionando aparte, igual que hoy.
+  forma_pago        String
+  registrado_por_id Int
+  creado_en         DateTime @default(now())
+
+  cuenta         Cuenta    @relation(fields: [cuenta_id], references: [id], onDelete: Cascade)
+  division       Division? @relation(fields: [division_id], references: [id])
+  registrado_por Usuario   @relation(fields: [registrado_por_id], references: [id])
+
+  @@index([cuenta_id])
+  @@map("pago")
+}
+
+// ── Cierre del día ─────────────────────────────────────────────────────────
+
+/// Histórico e inmutable. `turno_id` es único: no se puede cerrar dos veces el
+/// mismo turno.
+model CierreDia {
+  id       Int @id @default(autoincrement())
+  turno_id Int @unique
+
+  /// Los TRES totalizadores independientes. Ninguna línea de comida cambia de
+  /// totalizador jamás. La separación es POR CUENTA, según su canal.
+  total_salon       Int
+  total_para_llevar Int
+  total_envases     Int
+
+  total_descuentos Int
+  /// Qué regla estaba activa al cerrar. El desglose guarda las tres.
+  regla_aplicada   String
+  n_meseras        Int
+  /// Desglose COMPLETO del cálculo, no solo el número final: evita discusiones.
+  desglose_json    String
+  generado_en      DateTime @default(now())
+
+  turno   Turno          @relation(fields: [turno_id], references: [id])
+  meseras CierreMesera[]
+
+  @@map("cierre_dia")
+}
+
+model CierreMesera {
+  id         Int @id @default(autoincrement())
+  cierre_id  Int
+  usuario_id Int
+
+  /// Datos CRUDOS: si mañana cambia REGLA_REPARTO, los cierres viejos se pueden
+  /// recalcular porque el dato de origen quedó guardado.
+  horas_trabajadas  Float
+  ventas_atribuidas Int
+
+  /// Los tres repartos, siempre calculados aunque solo uno esté activo.
+  monto_atribucion     Int
+  monto_horas          Int
+  monto_partes_iguales Int
+
+  cierre  CierreDia @relation(fields: [cierre_id], references: [id], onDelete: Cascade)
+  usuario Usuario   @relation(fields: [usuario_id], references: [id])
+
+  @@unique([cierre_id, usuario_id])
+  @@map("cierre_mesera")
+}
+
+/// Clave-valor. La regla de reparto, el precio del envase y los umbrales de
+/// cocina se ajustan sin tocar código.
+model Configuracion {
+  clave       String  @id
+  valor       String
+  descripcion String?
+
+  @@map("configuracion")
+}

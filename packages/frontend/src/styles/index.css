@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+    font-family:
+      system-ui,
+      -apple-system,
+      'Segoe UI',
+      Roboto,
+      sans-serif;
+    /* En cocina la tablet va montada en la pared: nada de rebote elástico. */
+    overscroll-behavior: none;
+  }
+
+  /* La cocina no selecciona texto: cada toque es una acción. */
+  .escala-cocina {
+    @apply select-none text-cocina-base;
+  }
+}
+
+@layer components {
+  /* ── Botones ─────────────────────────────────────────────────────────── */
+
+  .boton {
+    @apply inline-flex min-h-boton-normal items-center justify-center rounded-lg px-4
+           font-semibold transition active:scale-[0.98] disabled:cursor-not-allowed
+           disabled:opacity-40;
+  }
+
+  .boton-primario {
+    @apply boton bg-marca text-white hover:bg-marca-oscuro;
+  }
+
+  .boton-secundario {
+    @apply boton border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50;
+  }
+
+  .boton-peligro {
+    @apply boton bg-red-600 text-white hover:bg-red-700;
+  }
+
+  /* Botón de cocina: 80 px de alto, palabras en español, imposible errarle. */
+  .boton-cocina {
+    @apply flex min-h-boton-cocina w-full items-center justify-center rounded-xl
+           text-cocina-lg font-bold uppercase tracking-wide text-white
+           active:scale-[0.98];
+  }
+
+  /* ── Estados de la comanda ───────────────────────────────────────────── */
+
+  .estado-nuevo {
+    @apply border-estado-nuevo bg-estado-nuevo-tenue;
+  }
+
+  .estado-preparacion {
+    @apply border-estado-preparacion bg-estado-preparacion-tenue;
+  }
+
+  .estado-listo {
+    @apply border-estado-listo bg-estado-listo-tenue;
+  }
+
+  /* Banda naranja de los pedidos que se suman a una cuenta ya abierta. */
+  .estado-agregado {
+    @apply bg-estado-agregado text-white;
+  }
+
+  /* ── Tarjetas ────────────────────────────────────────────────────────── */
+
+  .tarjeta {
+    @apply rounded-xl border border-slate-200 bg-white p-4 shadow-sm;
+  }
+
+  /*
+   * Franja lateral gruesa con el color de la mesera.
+   * El color va como estilo en línea (borderLeftColor): cada usuaria tiene el
+   * suyo y Tailwind no genera clases dinámicas.
+   *
+   * ⚠️ El color NUNCA es la única señal: siempre acompañado del nombre de la
+   * mesera en texto legible. Daltonismo y sol directo en la terraza.
+   */
+  .tarjeta-mesera {
+    @apply tarjeta border-l-8;
+  }
+
+  /* Las cuentas de las compañeras: visibles y accesibles, pero apagadas. */
+  .tarjeta-ajena {
+    @apply opacity-60 grayscale-[0.35];
+  }
+
+  /* ── Notas del cliente ───────────────────────────────────────────────── */
+
+  /* "SIN CEBOLLA" — el dato que más se pasa por alto y el que más devuelve platos. */
+  .nota-cliente {
+    @apply rounded-md bg-amber-100 px-2 py-1 font-bold uppercase text-amber-900;
+  }
+}
