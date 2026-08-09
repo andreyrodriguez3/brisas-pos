@@ -30,3 +30,4 @@ export * from './schemas/cuenta';
 export * from './schemas/pedido';
 export * from './schemas/cobro';
 export * from './schemas/turno';
+export * from './schemas/configuracion';
