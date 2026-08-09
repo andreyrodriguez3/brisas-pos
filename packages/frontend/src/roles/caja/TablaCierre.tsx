@@ -58,10 +58,11 @@ export function TablaCierre({ cierre }: { cierre: CierreCompleto }) {
       <section>
         <h3 className="font-semibold">Reparto entre meseras</h3>
         <p className="mb-2 text-sm text-slate-600">
-          Se reparte el total de <strong>salón</strong> ({formatearColones(cierre.base_reparto)}).
-          Para llevar es la cuenta aparte de la dueña y los envases son empaque, no venta de nadie.
-          Hoy manda <strong>{NOMBRE_REGLA[cierre.regla_aplicada]}</strong> —{' '}
-          {AYUDA_REGLA[cierre.regla_aplicada]}.
+          Se reparte el <strong>{cierre.porcentaje_propina}%</strong> de servicio sobre el total de{' '}
+          <strong>salón</strong>: {formatearColones(cierre.base_reparto)} de{' '}
+          {formatearColones(cierre.total_salon)}. Para llevar es la cuenta aparte de la dueña y los
+          envases son empaque, no venta de nadie. Hoy manda{' '}
+          <strong>{NOMBRE_REGLA[cierre.regla_aplicada]}</strong> — {AYUDA_REGLA[cierre.regla_aplicada]}.
         </p>
 
         {cierre.meseras.length === 0 ? (

@@ -3,6 +3,7 @@ import {
   CLAVES_CONFIG,
   MIN_ALERTA_COCINA_DEFAULT,
   MIN_URGENTE_COCINA_DEFAULT,
+  PORCENTAJE_PROPINA_DEFAULT,
   PRECIO_ENVASE_DEFAULT,
   ReglaReparto,
   type ClaveConfig,
@@ -51,6 +52,11 @@ export class ConfiguracionService {
   /** ₡200 por unidad, precio único. */
   async precioEnvase(): Promise<number> {
     return this.entero(CLAVES_CONFIG.PRECIO_ENVASE, PRECIO_ENVASE_DEFAULT);
+  }
+
+  /** El % del total de salón que se reparte entre meseras en el cierre. */
+  async porcentajePropina(): Promise<number> {
+    return this.entero(CLAVES_CONFIG.PORCENTAJE_PROPINA, PORCENTAJE_PROPINA_DEFAULT);
   }
 
   async umbralesCocina(): Promise<{ alerta: number; urgente: number }> {

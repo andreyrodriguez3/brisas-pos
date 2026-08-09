@@ -157,58 +157,90 @@ describe('calcularReparto — las tres reglas, siempre', () => {
     { canal: 'PARA_LLEVAR', mesera_responsable_id: null, lineas: [platillo(30_000), envase(2)] },
   ];
 
-  it('reparte solo el total de SALÓN', () => {
-    const r = calcularReparto(cuentas, [{ usuario_id: 1, horas: 6 }, { usuario_id: 2, horas: 6 }], 'ATRIBUCION');
-    expect(r.base_reparto).toBe(100_000);
+  it('reparte el PORCENTAJE de SALÓN, no el total', () => {
+    const r = calcularReparto(cuentas, [{ usuario_id: 1, horas: 6 }, { usuario_id: 2, horas: 6 }], 'ATRIBUCION', 10);
+    expect(r.base_reparto).toBe(10_000);
+    expect(r.porcentaje_propina).toBe(10);
   });
 
-  it('por atribución cada una se lleva lo suyo', () => {
-    const r = calcularReparto(cuentas, [{ usuario_id: 1, horas: 3 }, { usuario_id: 2, horas: 9 }], 'ATRIBUCION');
-    expect(r.meseras.map((m) => m.monto_atribucion)).toEqual([60_000, 40_000]);
+  it('por atribución cada una se lleva el porcentaje de lo suyo', () => {
+    const r = calcularReparto(cuentas, [{ usuario_id: 1, horas: 3 }, { usuario_id: 2, horas: 9 }], 'ATRIBUCION', 10);
+    expect(r.meseras.map((m) => m.monto_atribucion)).toEqual([6_000, 4_000]);
   });
 
-  it('por horas reparte en proporción a lo trabajado', () => {
-    const r = calcularReparto(cuentas, [{ usuario_id: 1, horas: 3 }, { usuario_id: 2, horas: 9 }], 'HORAS');
-    expect(r.meseras.map((m) => m.monto_horas)).toEqual([25_000, 75_000]);
+  it('por horas reparte en proporción a lo trabajado, sobre la base ya escalada', () => {
+    const r = calcularReparto(cuentas, [{ usuario_id: 1, horas: 3 }, { usuario_id: 2, horas: 9 }], 'HORAS', 10);
+    expect(r.meseras.map((m) => m.monto_horas)).toEqual([2_500, 7_500]);
   });
 
   it('en partes iguales el sobrante va a la primera', () => {
     const impar: CuentaDeCierre[] = [{ canal: 'SALON', mesera_responsable_id: 1, lineas: [platillo(25_000)] }];
-    const r = calcularReparto(impar, [{ usuario_id: 1, horas: 6 }, { usuario_id: 2, horas: 6 }, { usuario_id: 3, horas: 6 }], 'PARTES_IGUALES');
-    expect(r.meseras.map((m) => m.monto_partes_iguales)).toEqual([8_334, 8_333, 8_333]);
+    const r = calcularReparto(
+      impar,
+      [{ usuario_id: 1, horas: 6 }, { usuario_id: 2, horas: 6 }, { usuario_id: 3, horas: 6 }],
+      'PARTES_IGUALES',
+      10,
+    );
+    // Base: 10% de ₡25.000 = ₡2.500, entre 3 → 834/833/833.
+    expect(r.meseras.map((m) => m.monto_partes_iguales)).toEqual([834, 833, 833]);
   });
 
-  it('las tres reglas suman siempre el mismo total de salón', () => {
+  it('las tres reglas suman siempre la misma base (el porcentaje del salón)', () => {
     const meseras = [{ usuario_id: 1, horas: 5.5 }, { usuario_id: 2, horas: 3.25 }];
-    const r = calcularReparto(cuentas, meseras, 'ATRIBUCION');
+    const r = calcularReparto(cuentas, meseras, 'ATRIBUCION', 10);
 
     const suma = (f: (m: (typeof r.meseras)[number]) => number) => r.meseras.reduce((a, m) => a + f(m), 0);
-    expect(suma((m) => m.monto_atribucion)).toBe(100_000);
-    expect(suma((m) => m.monto_horas)).toBe(100_000);
-    expect(suma((m) => m.monto_partes_iguales)).toBe(100_000);
+    expect(suma((m) => m.monto_horas)).toBe(10_000);
+    expect(suma((m) => m.monto_partes_iguales)).toBe(10_000);
+    // ATRIBUCION escala cada venta por separado (no reparte un "pool"), así que
+    // en general puede diferir del total ya escalado por redondeo independiente.
+    // Acá coincide porque ambas ventas son múltiplos exactos del porcentaje.
+    expect(suma((m) => m.monto_atribucion)).toBe(10_000);
   });
 
-  it('guarda los datos crudos para poder recalcular si la regla cambia', () => {
-    const r = calcularReparto(cuentas, [{ usuario_id: 1, horas: 6.5 }], 'ATRIBUCION');
+  it('EL CASO DE ANDREY: ₡1.000.000 de salón, 10% → ₡100.000 a repartir entre las meseras', () => {
+    const millon: CuentaDeCierre[] = [{ canal: 'SALON', mesera_responsable_id: 1, lineas: [platillo(1_000_000)] }];
+    const r = calcularReparto(
+      millon,
+      [{ usuario_id: 1, horas: 6 }, { usuario_id: 2, horas: 6 }],
+      'PARTES_IGUALES',
+      10,
+    );
+    expect(r.base_reparto).toBe(100_000);
+    // "si fueran 2 le toca 50.000 a cada una"
+    expect(r.meseras.map((m) => m.monto_partes_iguales)).toEqual([50_000, 50_000]);
+  });
+
+  it('EL CASO TRAMPA: ventas_atribuidas queda en el 100% bruto, monto_atribucion en el porcentaje real', () => {
+    const r = calcularReparto(cuentas, [{ usuario_id: 1, horas: 6.5 }], 'ATRIBUCION', 10);
     expect(r.meseras[0].horas_trabajadas).toBe(6.5);
+    // Vendió ₡60.000 (contexto, informativo)...
     expect(r.meseras[0].ventas_atribuidas).toBe(60_000);
+    // ...pero lo que se reparte es el 10% de eso, no los ₡60.000 completos.
+    expect(r.meseras[0].monto_atribucion).toBe(6_000);
   });
 
-  it('con una sola mesera, las tres reglas dan lo mismo: todo para ella', () => {
+  it('con una sola mesera, las tres reglas dan lo mismo: el porcentaje de lo que vendió', () => {
     // "Una mesera va un día de 11 a 5 y todo va a ser para ella" — la dueña.
     const sola: CuentaDeCierre[] = [{ canal: 'SALON', mesera_responsable_id: 7, lineas: [platillo(83_000)] }];
-    const r = calcularReparto(sola, [{ usuario_id: 7, horas: 6 }], 'ATRIBUCION');
+    const r = calcularReparto(sola, [{ usuario_id: 7, horas: 6 }], 'ATRIBUCION', 10);
     expect(r.meseras[0]).toMatchObject({
-      monto_atribucion: 83_000,
-      monto_horas: 83_000,
-      monto_partes_iguales: 83_000,
+      monto_atribucion: 8_300,
+      monto_horas: 8_300,
+      monto_partes_iguales: 8_300,
     });
   });
 
   it('sin meseras en el turno no explota', () => {
-    const r = calcularReparto(cuentas, [], 'ATRIBUCION');
+    const r = calcularReparto(cuentas, [], 'ATRIBUCION', 10);
     expect(r.meseras).toEqual([]);
-    expect(r.base_reparto).toBe(100_000);
+    expect(r.base_reparto).toBe(10_000);
+  });
+
+  it('con porcentaje distinto de 10, escala igual', () => {
+    const r = calcularReparto(cuentas, [{ usuario_id: 1, horas: 6 }], 'ATRIBUCION', 15);
+    expect(r.base_reparto).toBe(15_000);
+    expect(r.porcentaje_propina).toBe(15);
   });
 });
 

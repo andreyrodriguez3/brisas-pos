@@ -7,6 +7,7 @@ import { ReglaReparto } from '../types/enums';
 export const CLAVES_CONFIG = {
   PRECIOS_INCLUYEN_IMPUESTOS: 'PRECIOS_INCLUYEN_IMPUESTOS',
   REGLA_REPARTO: 'REGLA_REPARTO',
+  PORCENTAJE_PROPINA: 'PORCENTAJE_PROPINA',
   PRECIO_ENVASE: 'PRECIO_ENVASE',
   MIN_ALERTA_COCINA: 'MIN_ALERTA_COCINA',
   MIN_URGENTE_COCINA: 'MIN_URGENTE_COCINA',
@@ -33,6 +34,12 @@ export const CONFIG_POR_DEFECTO: readonly DefinicionConfig[] = [
       'Regla de reparto activa: ATRIBUCION | HORAS | PARTES_IGUALES. El cierre siempre calcula y muestra las tres; esta dice cuál manda.',
   },
   {
+    clave: CLAVES_CONFIG.PORCENTAJE_PROPINA,
+    valor: '10',
+    descripcion:
+      'Porcentaje del total de SALÓN que se reparte entre las meseras en el cierre — el 10% de servicio que ya viene incluido en cada precio (INVARIANTE 8). Si un día entran ₡1.000.000 de salón, se reparten ₡100.000, no el millón.',
+  },
+  {
     clave: CLAVES_CONFIG.PRECIO_ENVASE,
     valor: '200',
     descripcion: 'Colones por envase plástico. Precio único, sin importar el tamaño.',
@@ -51,6 +58,9 @@ export const CONFIG_POR_DEFECTO: readonly DefinicionConfig[] = [
 
 /** Precio de respaldo del envase si `configuracion` no responde. */
 export const PRECIO_ENVASE_DEFAULT = 200;
+
+/** Porcentaje de respaldo de la propina si `configuracion` no responde. */
+export const PORCENTAJE_PROPINA_DEFAULT = 10;
 
 /** Nombre del PIN de las usuarias de prueba que crea el seed. Solo desarrollo. */
 export const PIN_DEMO = '1234';
