@@ -76,6 +76,7 @@ export class AuditoriaService {
         ...(filtro.cuenta_id ? { cuenta_id: filtro.cuenta_id } : {}),
         ...(filtro.usuario_id ? { usuario_id: filtro.usuario_id } : {}),
         ...(filtro.accion ? { accion: filtro.accion } : {}),
+        ...(filtro.antes_de_id ? { id: { lt: filtro.antes_de_id } } : {}),
         ...(filtro.desde || filtro.hasta
           ? {
               creado_en: {
@@ -86,7 +87,11 @@ export class AuditoriaService {
           : {}),
       },
       include: { usuario: { select: { id: true, nombre: true, color_hex: true } } },
-      orderBy: { creado_en: 'desc' },
+      // `id` en vez de `creado_en`: en este sistema coinciden siempre (auto-
+      // incremental en orden de creación) y así "antes_de_id" es un cursor
+      // exacto para "Cargar más", sin depender de que dos registros no caigan
+      // nunca en el mismo milisegundo.
+      orderBy: { id: 'desc' },
       take: filtro.limite,
     });
     return registros;
