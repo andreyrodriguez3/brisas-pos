@@ -49,7 +49,7 @@ export function Modal({
         // Clic en el fondo (fuera de la tarjeta) cierra.
         if (e.target === ref.current) onCerrar();
       }}
-      className={`w-full rounded-2xl p-0 backdrop:bg-slate-900/40 ${
+      className={`w-full rounded-2xl p-0 shadow-2xl backdrop:bg-slate-900/40 backdrop:backdrop-blur-[2px] ${
         ancho === 'ancho' ? 'max-w-3xl' : 'max-w-lg'
       }`}
     >

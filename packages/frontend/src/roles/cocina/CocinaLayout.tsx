@@ -76,15 +76,18 @@ export function CocinaLayout() {
         {COLUMNAS.map((columna) => {
           const comandas = porEstado(columna.estado);
           return (
-            <section key={columna.estado} className="flex min-h-0 flex-col">
+            <section
+              key={columna.estado}
+              className="flex min-h-0 flex-col overflow-hidden rounded-xl shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_20px_-12px_rgba(15,23,42,0.12)]"
+            >
               <h2
-                className={`${columna.clase} flex items-baseline justify-center gap-3 rounded-t-xl px-4 py-3 text-cocina-lg font-bold tracking-wide text-white`}
+                className={`${columna.clase} flex items-baseline justify-center gap-3 px-4 py-3 text-cocina-lg font-bold tracking-wide text-white`}
               >
                 {columna.titulo}
                 <span className="text-cocina-xs tabular-nums opacity-90">{comandas.length}</span>
               </h2>
 
-              <div className="flex-1 overflow-y-auto rounded-b-xl bg-white/60 p-3">
+              <div className="flex-1 overflow-y-auto bg-white/80 p-3">
                 {cola.cargando ? (
                   <p className="p-4 text-center text-cocina-xs text-slate-400">Cargando…</p>
                 ) : comandas.length === 0 ? (

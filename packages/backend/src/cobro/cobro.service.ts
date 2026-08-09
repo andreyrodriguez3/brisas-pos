@@ -248,6 +248,7 @@ export class CobroService {
   async fijarDivision(cuentaId: number, dto: FijarDivisionDto, usuarioId: number) {
     await this.prisma.$transaction(async (tx) => {
       await this.exigirCobrable(tx, cuentaId);
+      await this.exigirSinPagos(tx, cuentaId);
 
       const previa = await tx.division.findFirst({ where: { cuenta_id: cuentaId } });
       const datos = { modo: dto.modo, n_partes: dto.n_partes ?? null };
@@ -276,6 +277,7 @@ export class CobroService {
   async guardarComensales(cuentaId: number, dto: GuardarComensalesDto, usuarioId: number) {
     await this.prisma.$transaction(async (tx) => {
       await this.exigirCobrable(tx, cuentaId);
+      await this.exigirSinPagos(tx, cuentaId);
 
       const conservados: number[] = [];
       for (const [indice, c] of dto.comensales.entries()) {
@@ -327,6 +329,7 @@ export class CobroService {
   async asignarLineas(cuentaId: number, dto: AsignarLineasDto, usuarioId: number) {
     await this.prisma.$transaction(async (tx) => {
       await this.exigirCobrable(tx, cuentaId);
+      await this.exigirSinPagos(tx, cuentaId);
 
       const comensales = await tx.comensal.findMany({
         where: { cuenta_id: cuentaId },
@@ -556,5 +559,27 @@ export class CobroService {
       throw new BadRequestException('Esta cuenta está anulada');
     }
     return cuenta;
+  }
+
+  /**
+   * Nada de cambiar la modalidad, los comensales o a quién le toca cada línea
+   * después de que ya se registró un pago.
+   *
+   * `pago.parte_num` es un ÍNDICE POSICIONAL (1, 2, 3…), no una referencia al
+   * comensal. Si se cambia la modalidad o se reordena/agrega/quita un
+   * comensal después de cobrar, un pago viejo queda re-atribuido por
+   * posición a un comensal distinto del que pagó — la suma de "pagado" por
+   * comensal deja de cuadrar con el saldo real, y `registrarPago` puede
+   * terminar cerrando la cuenta entera aunque a otro comensal le falte por
+   * pagar. Si hace falta corregir la asignación, primero hay que anular el
+   * pago.
+   */
+  private async exigirSinPagos(tx: Prisma.TransactionClient, cuentaId: number) {
+    const pagos = await tx.pago.count({ where: { cuenta_id: cuentaId } });
+    if (pagos > 0) {
+      throw new BadRequestException(
+        'Ya se registró un pago en esta cuenta; no se puede cambiar cómo se divide. Si hace falta corregir la asignación, anulá el pago primero.',
+      );
+    }
   }
 }

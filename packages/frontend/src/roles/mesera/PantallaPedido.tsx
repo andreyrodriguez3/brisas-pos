@@ -112,7 +112,7 @@ export function PantallaPedido({ base = '/mesera' }: { base?: string } = {}) {
       </header>
 
       {/* Pestañas horizontales de categorías. */}
-      <nav className="flex gap-2 overflow-x-auto border-b bg-white px-4 py-2">
+      <nav className="flex gap-2 overflow-x-auto border-b border-slate-200/70 bg-white px-4 py-2 shadow-sm">
         {categorias.map((c) => (
           <button
             key={c.id}
@@ -132,15 +132,17 @@ export function PantallaPedido({ base = '/mesera' }: { base?: string } = {}) {
             <button
               onClick={() => setProductoAbierto(p)}
               disabled={p.agotado}
-              className="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-slate-50 disabled:opacity-40"
+              className="flex min-h-tactil w-full items-center gap-3 px-4 py-4 text-left transition active:bg-slate-50 disabled:opacity-40"
             >
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2">
-                  <span className="truncate font-medium">{p.nombre_es}</span>
+                  <span className="truncate font-medium leading-snug">{p.nombre_es}</span>
                   {p.agotado && <Insignia tono="aviso">Agotado</Insignia>}
                 </span>
                 {p.descripcion && (
-                  <span className="block truncate text-sm text-slate-500">{p.descripcion}</span>
+                  <span className="mt-0.5 block truncate text-sm text-slate-500">
+                    {p.descripcion}
+                  </span>
                 )}
               </span>
               <span className="shrink-0 font-semibold tabular-nums">

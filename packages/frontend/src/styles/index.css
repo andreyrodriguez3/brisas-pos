@@ -31,26 +31,26 @@
 
   .boton {
     @apply inline-flex min-h-boton-normal items-center justify-center rounded-lg px-4
-           font-semibold transition active:scale-[0.98] disabled:cursor-not-allowed
-           disabled:opacity-40;
+           font-semibold shadow-sm transition active:scale-[0.98] disabled:cursor-not-allowed
+           disabled:opacity-40 disabled:shadow-none;
   }
 
   .boton-primario {
-    @apply boton bg-marca text-white hover:bg-marca-oscuro;
+    @apply boton bg-marca text-white hover:bg-marca-oscuro hover:shadow;
   }
 
   .boton-secundario {
-    @apply boton border-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50;
+    @apply boton border border-slate-300 bg-white text-slate-700 shadow-none hover:bg-slate-50;
   }
 
   .boton-peligro {
-    @apply boton bg-red-600 text-white hover:bg-red-700;
+    @apply boton bg-red-600 text-white hover:bg-red-700 hover:shadow;
   }
 
   /* Botón de cocina: 80 px de alto, palabras en español, imposible errarle. */
   .boton-cocina {
     @apply flex min-h-boton-cocina w-full items-center justify-center rounded-xl
-           text-cocina-lg font-bold uppercase tracking-wide text-white
+           text-cocina-lg font-bold uppercase tracking-wide text-white shadow-sm
            active:scale-[0.98];
   }
 
@@ -75,8 +75,14 @@
 
   /* ── Tarjetas ────────────────────────────────────────────────────────── */
 
+  /*
+   * Sombra de dos capas en vez de un `shadow-sm` plano: una de contacto muy
+   * cerrada + una difusa más ancha. Así la tarjeta se separa del fondo con
+   * profundidad real en vez de leerse como un rectángulo con borde gris.
+   */
   .tarjeta {
-    @apply rounded-xl border border-slate-200 bg-white p-4 shadow-sm;
+    @apply rounded-xl border border-slate-200/70 bg-white p-4
+           shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_20px_-12px_rgba(15,23,42,0.12)];
   }
 
   /*

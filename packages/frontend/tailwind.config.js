@@ -48,11 +48,13 @@ export default {
 
       fontSize: {
         // ── Escala cocina ──────────────────────────────────────────────────
+        // El tracking negativo en los tamaños grandes es a propósito: letras
+        // muy separadas a 32px+ se leen "infladas". El cuerpo se deja en 0.
         'cocina-xs': ['1.25rem', { lineHeight: '1.75rem' }], // 20 px — el piso
         'cocina-base': ['1.5rem', { lineHeight: '2rem' }], //    24 px — platillos
         'cocina-lg': ['1.75rem', { lineHeight: '2.25rem' }], //  28 px
-        'cocina-titulo': ['2rem', { lineHeight: '2.5rem' }], //  32 px — cliente
-        'cocina-xl': ['2.5rem', { lineHeight: '3rem' }], //      40 px — columnas
+        'cocina-titulo': ['2rem', { lineHeight: '2.5rem', letterSpacing: '-0.01em' }], //  32 px — cliente
+        'cocina-xl': ['2.5rem', { lineHeight: '3rem', letterSpacing: '-0.015em' }], //      40 px — columnas
       },
 
       spacing: {

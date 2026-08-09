@@ -58,10 +58,16 @@ function Formulario({
   const [monto, setMonto] = useState(String(aCobrar));
   const [forma, setForma] = useState<FormaPago>(FormaPago.EFECTIVO);
   const [forzar, setForzar] = useState(false);
+  // Con cuánto paga el cliente: solo para calcular el vuelto en efectivo, no
+  // se manda al backend. El monto que salda la cuenta sigue siendo `monto`.
+  const [conCuanto, setConCuanto] = useState('');
 
   const numero = Number.parseInt(monto, 10);
   const valido = Number.isInteger(numero) && numero > 0 && numero <= saldoCuenta;
   const parcial = valido && numero < aCobrar;
+
+  const recibido = Number.parseInt(conCuanto, 10);
+  const vuelto = Number.isInteger(recibido) && valido && recibido >= numero ? recibido - numero : null;
 
   const pagar = useMutation({
     mutationFn: () =>
@@ -118,6 +124,29 @@ function Formulario({
           </div>
         )}
       </Campo>
+
+      {forma === FormaPago.EFECTIVO && (
+        <Campo etiqueta="Con cuánto paga" ayuda="Opcional: para calcular el vuelto.">
+          {(props) => (
+            <Entrada
+              {...props}
+              type="number"
+              inputMode="numeric"
+              min={0}
+              value={conCuanto}
+              onChange={(e) => setConCuanto(e.target.value)}
+              placeholder={String(numero || '')}
+              className="text-xl tabular-nums"
+            />
+          )}
+        </Campo>
+      )}
+
+      {vuelto !== null && (
+        <p className="rounded-lg bg-marca-claro p-3">
+          Vuelto: <strong className="tabular-nums">{formatearColones(vuelto)}</strong>
+        </p>
+      )}
 
       {parcial && (
         <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">

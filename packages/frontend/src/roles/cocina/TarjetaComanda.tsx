@@ -21,11 +21,21 @@ interface Props {
   onTocar: (comanda: ComandaCocina) => void;
 }
 
-/** Fondo de la tarjeta según su columna. */
-const FONDO: Record<string, string> = {
-  ENVIADO: 'border-estado-nuevo bg-estado-nuevo-tenue',
-  EN_PREPARACION: 'border-estado-preparacion bg-estado-preparacion-tenue',
-  LISTO: 'border-estado-listo bg-estado-listo-tenue',
+/**
+ * El semáforo de estado vive en una franja + una etiqueta, no en toda la
+ * tarjeta teñida de color — eso se leía como un bloque plano y competía con
+ * el nombre del cliente, que es el dato que más importa a simple vista.
+ */
+const BORDE: Record<string, string> = {
+  ENVIADO: 'border-l-estado-nuevo',
+  EN_PREPARACION: 'border-l-estado-preparacion',
+  LISTO: 'border-l-estado-listo',
+};
+
+const ETIQUETA_ESTADO: Record<string, { texto: string; clase: string }> = {
+  ENVIADO: { texto: 'NUEVO', clase: 'bg-estado-nuevo-tenue text-amber-900' },
+  EN_PREPARACION: { texto: 'EN PREPARACIÓN', clase: 'bg-estado-preparacion-tenue text-blue-900' },
+  LISTO: { texto: 'LISTO', clase: 'bg-estado-listo-tenue text-green-900' },
 };
 
 /**
@@ -52,8 +62,9 @@ export function TarjetaComanda({ comanda, ahora, umbrales, parpadea, enVuelo, on
       disabled={enVuelo || !paso}
       onClick={() => onTocar(comanda)}
       // `text-left`: es un botón, pero por dentro es una comanda que se lee.
-      className={`mb-sep-cocina w-full overflow-hidden rounded-xl border-4 text-left shadow-sm
-        transition active:scale-[0.99] disabled:opacity-60 ${FONDO[comanda.estado] ?? ''}
+      className={`mb-sep-cocina w-full overflow-hidden rounded-xl border border-slate-200/70
+        border-l-8 bg-white text-left shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_20px_-12px_rgba(15,23,42,0.16)]
+        transition active:scale-[0.99] disabled:opacity-60 ${BORDE[comanda.estado] ?? ''}
         ${parpadea ? 'animate-entrada-nueva' : ''}`}
     >
       {/* Banda naranja: esto se suma a una cuenta que ya estaba comiendo. */}
@@ -75,10 +86,21 @@ export function TarjetaComanda({ comanda, ahora, umbrales, parpadea, enVuelo, on
           <p className="truncate text-cocina-titulo font-bold uppercase leading-tight">
             {comanda.nombre_cliente}
           </p>
-          <p className="text-cocina-xs text-slate-600">
-            {esParaLlevar ? 'PARA LLEVAR' : `Mesera: ${comanda.mesera_nombre ?? '—'}`}
-            {comanda.referencia && ` · ${comanda.referencia}`}
-          </p>
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+            {/* text-cocina-xs, no un tamaño de chip más chico: nada baja de
+                20px en esta pantalla, ni siquiera una etiqueta. */}
+            <span
+              className={`shrink-0 rounded px-1.5 text-cocina-xs font-bold uppercase tracking-wide ${
+                ETIQUETA_ESTADO[comanda.estado]?.clase ?? ''
+              }`}
+            >
+              {ETIQUETA_ESTADO[comanda.estado]?.texto}
+            </span>
+            <p className="text-cocina-xs text-slate-600">
+              {esParaLlevar ? 'PARA LLEVAR' : `Mesera: ${comanda.mesera_nombre ?? '—'}`}
+              {comanda.referencia && ` · ${comanda.referencia}`}
+            </p>
+          </div>
         </div>
 
         <Temporizador

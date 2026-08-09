@@ -61,7 +61,7 @@ export function MeseraLayout() {
       )}
 
       <header
-        className="flex items-center gap-3 border-b-4 bg-white px-4 py-3"
+        className="flex items-center gap-3 border-b-4 bg-white px-4 py-3 shadow-sm"
         style={{ borderBottomColor: color }}
       >
         <span
