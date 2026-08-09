@@ -30,7 +30,13 @@ Anotá también: marca y modelo del router, y si hay acceso administrativo.
 
 Se asigna desde la propia PC, **sin tocar el router**: el router no es nuestro y puede que no tengamos la clave.
 
-**Windows 11** → Configuración → Red e Internet → (Wi-Fi o Ethernet) → Propiedades del hardware → Configuración IP → Editar → **Manual** → activar IPv4:
+**Windows 11** → Configuración → Red e Internet → (Wi-Fi o Ethernet) → Propiedades del hardware → Configuración IP → Editar → **Manual** → activar IPv4
+
+**Windows 10** → Configuración → Red e Internet → (Wi-Fi o Ethernet) → tocar la red conectada → Configuración de IP → Editar → **Manual** → activar IPv4
+
+(En cualquiera de las dos versiones, la alternativa que nunca cambia de lugar es Panel de control clásico → Centro de redes y recursos compartidos → cambiar configuración del adaptador → clic derecho en la red → Propiedades → Protocolo de Internet versión 4 (TCP/IPv4) → Propiedades.)
+
+Los campos son los mismos:
 
 | Campo | Ejemplo |
 |---|---|

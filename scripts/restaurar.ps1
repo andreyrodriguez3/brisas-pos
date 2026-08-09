@@ -91,7 +91,7 @@ if ($texto -notlike 'SQLite format 3*') {
   throw "Ese archivo no es una base SQLite. No se restaura nada."
 }
 
-# Sin `?.`: Windows 11 trae PowerShell 5.1 y ese operador es de la 7.
+# Sin `?.`: Windows 10 y 11 traen PowerShell 5.1 por defecto y ese operador es de la 7.
 $comandoSqlite = Get-Command sqlite3.exe -ErrorAction SilentlyContinue
 $sqlite3 = if ($comandoSqlite) { $comandoSqlite.Source } else { $null }
 if ($sqlite3) {
