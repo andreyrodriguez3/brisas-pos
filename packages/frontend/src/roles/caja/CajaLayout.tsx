@@ -45,7 +45,7 @@ export function CajaLayout() {
     <div className="flex min-h-dvh flex-col">
       <BannerSinConexion conectado={conectado} />
 
-      <header className="flex items-center gap-6 border-b bg-white px-6 py-3">
+      <header className="flex items-center gap-6 border-b border-slate-200/70 bg-white px-6 py-3 shadow-sm">
         <h1 className="text-lg font-bold text-marca">Caja</h1>
         <nav className="flex flex-1 gap-1">
           {SECCIONES.map((s) => (
