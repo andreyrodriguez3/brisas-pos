@@ -55,6 +55,16 @@ export default {
         'cocina-lg': ['1.75rem', { lineHeight: '2.25rem' }], //  28 px
         'cocina-titulo': ['2rem', { lineHeight: '2.5rem', letterSpacing: '-0.01em' }], //  32 px — cliente
         'cocina-xl': ['2.5rem', { lineHeight: '3rem', letterSpacing: '-0.015em' }], //      40 px — columnas
+
+        // ── Escala normal (mesera, caja, admin) ─────────────────────────────
+        // Mismo criterio que cocina, pero más suave: acá el texto grande es un
+        // título de sección o un monto, no el nombre del cliente a 32px+. Solo
+        // se redefinen xl/2xl/3xl — el resto de la escala de Tailwind queda
+        // igual, `letter-spacing: normal` sigue siendo lo correcto por debajo
+        // de 20px.
+        xl: ['1.25rem', { lineHeight: '1.75rem', letterSpacing: '-0.005em' }], //  20 px
+        '2xl': ['1.5rem', { lineHeight: '2rem', letterSpacing: '-0.01em' }], //     24 px — montos y títulos de ficha
+        '3xl': ['1.875rem', { lineHeight: '2.25rem', letterSpacing: '-0.015em' }], // 30 px
       },
 
       spacing: {
