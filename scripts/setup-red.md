@@ -26,6 +26,32 @@ Anotá también: marca y modelo del router, y si hay acceso administrativo.
 
 ---
 
+## 0.1 Red de invitados, si el router la ofrece
+
+El sistema corre sin cifrar (HTTP, no HTTPS): no hay forma práctica de tener un
+certificado confiable en una red sin dominio ni internet, y montar uno
+autofirmado le mostraría a cada celular nuevo una advertencia de "conexión no
+segura" que hay que aceptar a mano — justo la fricción que este sistema evita
+en todo lo demás.
+
+La mitigación real es de red, no de código: **si el router del restaurante
+ofrece una red de invitados** (la mayoría de los routers comerciales y muchos
+domésticos la traen), activala y dejá ahí a los clientes que quieran wifi para
+navegar. Así nadie sentado en una mesa comparte el mismo segmento que los
+celulares de las meseras, la tablet de cocina o la PC de caja.
+
+Si el router no tiene esa opción, no es bloqueante — es una sola red
+compartida, como ya es hoy la mayoría de los locales chicos. El punto que
+importa (que nadie pueda escuchar el tráfico en tiempo real sin haber entrado
+con su PIN) ya está resuelto del lado del sistema.
+
+> 📄 **Nota aparte:** la duración de la sesión de mesera (hoy 30 días) y de
+> caja (hoy 12 horas) se ajusta con las variables `JWT_EXPIRES_MESERA` y
+> `JWT_EXPIRES_CAJA` en `.env`, sin tocar código, si algún día se quiere
+> acortar.
+
+---
+
 ## 1. IP fija en la PC de caja
 
 Se asigna desde la propia PC, **sin tocar el router**: el router no es nuestro y puede que no tengamos la clave.
