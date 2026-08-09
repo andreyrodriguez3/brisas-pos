@@ -19,7 +19,7 @@ Tres pantallas conectadas en tiempo real por el WiFi del propio restaurante:
 ## Requisitos
 
 - **Node.js 20 o superior**
-- Sin Docker: corre nativo en la PC de caja (Windows 11 o Linux)
+- Sin Docker: corre nativo en la PC de caja (Windows 10, Windows 11 o Linux)
 
 ---
 

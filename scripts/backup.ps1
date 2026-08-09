@@ -86,8 +86,9 @@ if ($usbConectada) {
 
 # ── Copia ───────────────────────────────────────────────────────────────────
 
-# Sin `?.`: Windows 11 trae PowerShell 5.1, que no entiende ese operador y ni
-# siquiera llega a ejecutar el archivo — falla al parsearlo entero.
+# Sin `?.`: Windows 10 y 11 traen PowerShell 5.1 por defecto, que no entiende
+# ese operador y ni siquiera llega a ejecutar el archivo — falla al parsearlo
+# entero.
 $comandoSqlite = Get-Command sqlite3.exe -ErrorAction SilentlyContinue
 $sqlite3 = if ($comandoSqlite) { $comandoSqlite.Source } else { $null }
 
