@@ -14,16 +14,18 @@ interface Props {
 }
 
 /**
- * "Cada quien lo suyo": dos paneles, asignación por toque.
+ * "Cada quien lo suyo": se toca una línea y, ahí mismo debajo, se toca a
+ * quién le toca — sin ir y venir a un panel aparte.
  *
- * A la izquierda las líneas de la cuenta, a la derecha los comensales. Se toca
- * una línea y después el comensal al que le toca. Una línea se puede compartir
- * entre varios —tres personas se parten una picada— y una de cantidad 3 se
- * puede repartir 2 y 1 con el ± de cada comensal.
+ * Un toque sobre un comensal le asigna TODA la línea (el caso común). Tocar
+ * un segundo comensal la reparte en partes iguales entre los tocados —así se
+ * comparte una picada—. El `±` solo aparece cuando hace falta un reparto
+ * desigual dentro de una línea de cantidad > 1 (2 cervezas para Juan, 1 para
+ * Ana), y vive junto al comensal ya asignado, no en un panel separado.
  *
  * El contador de líneas sin asignar está siempre a la vista, y el cobro no se
- * habilita hasta que llega a cero: una línea suelta es comida que no se le cobra
- * a nadie y que nadie va a notar hasta el cierre del día.
+ * habilita hasta que llega a cero: una línea suelta es comida que no se le
+ * cobra a nadie y que nadie va a notar hasta el cierre del día.
  */
 export function PanelPorConsumo({ cuentaId, cobro, deshabilitado, onCambio }: Props) {
   const [seleccionada, setSeleccionada] = useState<number | null>(null);
@@ -62,18 +64,29 @@ export function PanelPorConsumo({ cuentaId, cobro, deshabilitado, onCambio }: Pr
   const asignadosA = (lineaId: number) =>
     cobro.comensales.filter((c) => c.lineas.some((l) => l.linea_id === lineaId));
 
-  const cambiarPartes = (lineaId: number, comensalId: number, delta: number) => {
-    const actuales = cobro.comensales
-      .flatMap((c) =>
-        c.lineas
-          .filter((l) => l.linea_id === lineaId)
-          .map((l) => ({ comensal_id: c.id, partes: l.partes })),
-      )
-      .filter((a) => a.comensal_id !== comensalId);
+  const asignacionActual = (lineaId: number) =>
+    cobro.comensales
+      .flatMap((c) => c.lineas.filter((l) => l.linea_id === lineaId).map((l) => ({ comensal_id: c.id, partes: l.partes })));
 
+  /**
+   * Un toque sobre un comensal, para la línea seleccionada:
+   *  - si ya la tenía, se la quita;
+   *  - si no la tenía, se suma al grupo (parte igual, 1) — con nadie más
+   *    asignado eso es "toda la línea para esta persona".
+   */
+  const tocarComensal = (lineaId: number, comensalId: number) => {
+    const actuales = asignacionActual(lineaId);
+    const yaTiene = actuales.some((a) => a.comensal_id === comensalId);
+    const nuevos = yaTiene
+      ? actuales.filter((a) => a.comensal_id !== comensalId)
+      : [...actuales, { comensal_id: comensalId, partes: 1 }];
+    asignar.mutate({ linea_id: lineaId, comensales: nuevos });
+  };
+
+  const cambiarPartes = (lineaId: number, comensalId: number, delta: number) => {
+    const actuales = asignacionActual(lineaId).filter((a) => a.comensal_id !== comensalId);
     const nuevas = Math.max(0, partesDe(lineaId, comensalId) + delta);
     if (nuevas > 0) actuales.push({ comensal_id: comensalId, partes: nuevas });
-
     asignar.mutate({ linea_id: lineaId, comensales: actuales });
   };
 
@@ -122,11 +135,6 @@ export function PanelPorConsumo({ cuentaId, cobro, deshabilitado, onCambio }: Pr
             ? 'Todo asignado'
             : `${cobro.sin_asignar.length} sin asignar`}
         </span>
-        {seleccionada !== null && (
-          <span className="text-sm text-slate-600">
-            Tocá un comensal para darle la línea seleccionada.
-          </span>
-        )}
       </div>
 
       {error && <p className="text-sm text-red-700">{mensajeDeError(error)}</p>}
@@ -138,9 +146,9 @@ export function PanelPorConsumo({ cuentaId, cobro, deshabilitado, onCambio }: Pr
       )}
 
       <div
-        className={`grid gap-3 lg:grid-cols-2 ${deshabilitado ? 'pointer-events-none opacity-60' : ''}`}
+        className={`grid gap-3 lg:grid-cols-[2fr_1fr] ${deshabilitado ? 'pointer-events-none opacity-60' : ''}`}
       >
-        {/* ── Panel izquierdo: las líneas ─────────────────────────────────── */}
+        {/* ── Las líneas, con los comensales tocables ahí mismo ───────────── */}
         <div className="tarjeta">
           <h3 className="mb-2 font-semibold text-slate-700">Líneas de la cuenta</h3>
           <ul className="flex flex-col gap-1">
@@ -182,13 +190,75 @@ export function PanelPorConsumo({ cuentaId, cobro, deshabilitado, onCambio }: Pr
                     </span>
                   </button>
 
-                  {elegida && cobro.comensales.length > 1 && (
-                    <button
-                      onClick={() => repartirEntreTodos(linea.id)}
-                      className="mt-1 w-full rounded-lg bg-slate-100 py-1.5 text-sm font-medium text-slate-700"
-                    >
-                      Repartir entre todos por igual
-                    </button>
+                  {/* Los comensales aparecen tocables acá abajo, junto a la
+                      línea que se acaba de elegir: no hay que mirar a otro
+                      lado para asignarla. */}
+                  {elegida && (
+                    <div className="mt-1 flex flex-col gap-2 rounded-lg bg-slate-50 p-2">
+                      {cobro.comensales.length === 0 ? (
+                        <p className="text-sm text-slate-500">
+                          Agregá comensales a la derecha para poder asignar.
+                        </p>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {cobro.comensales.map((c) => {
+                            const partes = partesDe(linea.id, c.id);
+                            const tocada = partes > 0;
+                            return (
+                              <span key={c.id} className="inline-flex items-center gap-1">
+                                <button
+                                  onClick={() => tocarComensal(linea.id, c.id)}
+                                  disabled={asignar.isPending}
+                                  className={`min-h-boton-normal rounded-full px-4 text-sm font-semibold transition ${
+                                    tocada
+                                      ? 'bg-marca text-white'
+                                      : 'bg-white text-slate-700 ring-1 ring-slate-300'
+                                  }`}
+                                >
+                                  {c.etiqueta}
+                                </button>
+
+                                {/* Solo hace falta el ± cuando la cantidad da
+                                    para un reparto desigual, y solo una vez
+                                    que la persona ya está en la línea. */}
+                                {tocada && linea.cantidad > 1 && (
+                                  <span className="inline-flex items-center gap-0.5">
+                                    <button
+                                      aria-label={`Quitarle una parte a ${c.etiqueta}`}
+                                      disabled={asignar.isPending}
+                                      onClick={() => cambiarPartes(linea.id, c.id, -1)}
+                                      className="h-8 w-8 rounded-lg bg-white text-base font-bold ring-1 ring-slate-300 disabled:opacity-30"
+                                    >
+                                      −
+                                    </button>
+                                    <span className="w-4 text-center text-sm font-bold tabular-nums">
+                                      {partes}
+                                    </span>
+                                    <button
+                                      aria-label={`Darle una parte más a ${c.etiqueta}`}
+                                      disabled={asignar.isPending}
+                                      onClick={() => cambiarPartes(linea.id, c.id, 1)}
+                                      className="h-8 w-8 rounded-lg bg-white text-base font-bold ring-1 ring-slate-300"
+                                    >
+                                      +
+                                    </button>
+                                  </span>
+                                )}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {cobro.comensales.length > 1 && (
+                        <button
+                          onClick={() => repartirEntreTodos(linea.id)}
+                          className="w-full rounded-lg bg-white py-1.5 text-sm font-medium text-slate-700 ring-1 ring-slate-200"
+                        >
+                          Repartir entre todos por igual
+                        </button>
+                      )}
+                    </div>
                   )}
                 </li>
               );
@@ -196,68 +266,41 @@ export function PanelPorConsumo({ cuentaId, cobro, deshabilitado, onCambio }: Pr
           </ul>
         </div>
 
-        {/* ── Panel derecho: los comensales ───────────────────────────────── */}
+        {/* ── Comensales: nombres y totales. La asignación se hace a la izquierda. */}
         <div className="tarjeta">
           <h3 className="mb-2 font-semibold text-slate-700">Comensales</h3>
 
           <ul className="flex flex-col gap-2">
-            {cobro.comensales.map((comensal) => {
-              const partes = seleccionada !== null ? partesDe(seleccionada, comensal.id) : 0;
-              return (
-                <li
-                  key={comensal.id}
-                  className={`flex items-center gap-2 rounded-lg border-2 p-2 ${
-                    partes > 0 ? 'border-marca bg-marca-claro' : 'border-slate-200'
-                  }`}
-                >
-                  <input
-                    defaultValue={comensal.etiqueta}
-                    onBlur={(e) => {
-                      const valor = e.target.value.trim();
-                      if (valor && valor !== comensal.etiqueta) renombrar(comensal.id, valor);
-                    }}
-                    aria-label="Nombre del comensal"
-                    className="min-w-0 flex-1 rounded border-none bg-transparent px-1 font-medium focus:bg-white focus:ring-1 focus:ring-slate-300"
-                  />
+            {cobro.comensales.map((comensal) => (
+              <li
+                key={comensal.id}
+                className="flex items-center gap-2 rounded-lg border-2 border-slate-200 p-2"
+              >
+                <input
+                  defaultValue={comensal.etiqueta}
+                  onBlur={(e) => {
+                    const valor = e.target.value.trim();
+                    if (valor && valor !== comensal.etiqueta) renombrar(comensal.id, valor);
+                  }}
+                  aria-label="Nombre del comensal"
+                  className="min-w-0 flex-1 rounded border-none bg-transparent px-1 font-medium focus:bg-white focus:ring-1 focus:ring-slate-300"
+                />
 
-                  <span className="shrink-0 font-bold tabular-nums">
-                    {formatearColones(comensal.total)}
-                  </span>
+                <span className="shrink-0 font-bold tabular-nums">
+                  {formatearColones(comensal.total)}
+                </span>
 
-                  {seleccionada !== null ? (
-                    <span className="flex shrink-0 items-center gap-1">
-                      <button
-                        aria-label="Quitar una parte"
-                        disabled={partes === 0 || asignar.isPending}
-                        onClick={() => cambiarPartes(seleccionada, comensal.id, -1)}
-                        className="h-9 w-9 rounded-lg bg-white text-lg font-bold ring-1 ring-slate-300 disabled:opacity-30"
-                      >
-                        −
-                      </button>
-                      <span className="w-5 text-center font-bold tabular-nums">{partes}</span>
-                      <button
-                        aria-label="Darle una parte"
-                        disabled={asignar.isPending}
-                        onClick={() => cambiarPartes(seleccionada, comensal.id, 1)}
-                        className="h-9 w-9 rounded-lg bg-white text-lg font-bold ring-1 ring-slate-300"
-                      >
-                        +
-                      </button>
-                    </span>
-                  ) : (
-                    cobro.comensales.length > 1 && (
-                      <button
-                        onClick={() => quitar(comensal.id)}
-                        aria-label={`Quitar a ${comensal.etiqueta}`}
-                        className="shrink-0 rounded-lg px-2 py-1 text-slate-400 hover:bg-slate-100"
-                      >
-                        ×
-                      </button>
-                    )
-                  )}
-                </li>
-              );
-            })}
+                {cobro.comensales.length > 1 && (
+                  <button
+                    onClick={() => quitar(comensal.id)}
+                    aria-label={`Quitar a ${comensal.etiqueta}`}
+                    className="shrink-0 rounded-lg px-2 py-1 text-slate-400 hover:bg-slate-100"
+                  >
+                    ×
+                  </button>
+                )}
+              </li>
+            ))}
           </ul>
 
           <div className="mt-3 flex gap-2">
