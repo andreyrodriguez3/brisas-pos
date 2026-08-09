@@ -8,6 +8,8 @@ import { CLAVES_CAJA } from './api';
 interface Props {
   cuentaId: number;
   cobro: EstadoCobro;
+  /** Ya hay un pago registrado: no se puede tocar la asignación. */
+  deshabilitado: boolean;
   onCambio: (nuevo: EstadoCobro) => void;
 }
 
@@ -23,7 +25,7 @@ interface Props {
  * habilita hasta que llega a cero: una línea suelta es comida que no se le cobra
  * a nadie y que nadie va a notar hasta el cierre del día.
  */
-export function PanelPorConsumo({ cuentaId, cobro, onCambio }: Props) {
+export function PanelPorConsumo({ cuentaId, cobro, deshabilitado, onCambio }: Props) {
   const [seleccionada, setSeleccionada] = useState<number | null>(null);
   const [nuevoNombre, setNuevoNombre] = useState('');
 
@@ -129,7 +131,15 @@ export function PanelPorConsumo({ cuentaId, cobro, onCambio }: Props) {
 
       {error && <p className="text-sm text-red-700">{mensajeDeError(error)}</p>}
 
-      <div className="grid gap-3 lg:grid-cols-2">
+      {deshabilitado && (
+        <p className="rounded-lg bg-slate-100 p-3 text-sm text-slate-700">
+          Ya se registró un pago en esta cuenta: la asignación queda fija.
+        </p>
+      )}
+
+      <div
+        className={`grid gap-3 lg:grid-cols-2 ${deshabilitado ? 'pointer-events-none opacity-60' : ''}`}
+      >
         {/* ── Panel izquierdo: las líneas ─────────────────────────────────── */}
         <div className="tarjeta">
           <h3 className="mb-2 font-semibold text-slate-700">Líneas de la cuenta</h3>

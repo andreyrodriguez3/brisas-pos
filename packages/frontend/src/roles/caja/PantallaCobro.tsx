@@ -87,18 +87,27 @@ export function PantallaCobro() {
       </header>
 
       {/* ── Elegir la modalidad ───────────────────────────────────────────── */}
+      {/* Una vez que hay un pago registrado, la división queda fija: cambiarla
+          desordenaría a quién le corresponde cada pago ya hecho. */}
+      {e.pagado > 0 && (
+        <p className="rounded-lg bg-slate-100 p-3 text-sm text-slate-700">
+          Ya se registró un pago en esta cuenta, así que la forma de dividirla queda fija. Para
+          corregirla hay que anular el pago primero.
+        </p>
+      )}
+
       <div className="grid gap-3 md:grid-cols-3">
         {MODOS.map((m) => (
           <button
             key={m.valor}
-            disabled={fijarModo.isPending}
+            disabled={fijarModo.isPending || e.pagado > 0}
             onClick={() =>
               fijarModo.mutate({
                 modo: m.valor,
                 n_partes: m.valor === ModoDivision.PARTES_IGUALES ? (e.n_partes ?? 2) : null,
               })
             }
-            className={`rounded-xl border-2 p-4 text-left transition ${
+            className={`rounded-xl border-2 p-4 text-left transition disabled:cursor-not-allowed disabled:opacity-60 ${
               e.modo === m.valor
                 ? 'border-marca bg-marca-claro'
                 : 'border-slate-200 bg-white hover:border-slate-300'
@@ -115,12 +124,18 @@ export function PantallaCobro() {
       {e.modo === ModoDivision.PARTES_IGUALES && (
         <SelectorPartes
           actual={e.n_partes ?? 2}
+          deshabilitado={e.pagado > 0}
           onCambiar={(n) => fijarModo.mutate({ modo: ModoDivision.PARTES_IGUALES, n_partes: n })}
         />
       )}
 
       {e.modo === ModoDivision.POR_CONSUMO && (
-        <PanelPorConsumo cuentaId={cuentaId} cobro={e} onCambio={refrescar} />
+        <PanelPorConsumo
+          cuentaId={cuentaId}
+          cobro={e}
+          deshabilitado={e.pagado > 0}
+          onCambio={refrescar}
+        />
       )}
 
       {/* ── Las partes a cobrar ───────────────────────────────────────────── */}
@@ -202,9 +217,11 @@ export function PantallaCobro() {
 
 function SelectorPartes({
   actual,
+  deshabilitado,
   onCambiar,
 }: {
   actual: number;
+  deshabilitado: boolean;
   onCambiar: (n: number) => void;
 }) {
   return (
@@ -213,8 +230,9 @@ function SelectorPartes({
       {[2, 3, 4, 5, 6, 7, 8].map((n) => (
         <button
           key={n}
+          disabled={deshabilitado}
           onClick={() => onCambiar(n)}
-          className={`min-h-boton-normal w-12 rounded-lg font-bold tabular-nums ${
+          className={`min-h-boton-normal w-12 rounded-lg font-bold tabular-nums disabled:cursor-not-allowed disabled:opacity-60 ${
             n === actual ? 'bg-marca text-white' : 'bg-white ring-1 ring-slate-300'
           }`}
         >
