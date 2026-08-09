@@ -126,14 +126,20 @@ export interface RepartoMesera {
 
 export interface DesgloseReparto {
   /**
-   * Lo que se reparte en las reglas B y C.
+   * Lo que se reparte en las tres reglas: el `porcentaje_propina` de SALÓN.
    *
-   * DECISIÓN: es el total de SALÓN. Para llevar es la cuenta aparte de la dueña
-   * (sección 5.8) y los envases son recuperación de empaque, no venta de nadie.
-   * Se expone en el desglose para que la dueña vea exactamente qué se dividió,
-   * en vez de tener que confiar en un número final.
+   * DECISIÓN: la base es el total de SALÓN — para llevar es la cuenta aparte
+   * de la dueña (sección 5.8) y los envases son recuperación de empaque, no
+   * venta de nadie —, pero lo que efectivamente se reparte NO es el 100% de
+   * esa base: es el porcentaje de servicio que ya viene incluido en cada
+   * precio (INVARIANTE 8). Si un día entran ₡1.000.000 de salón y el
+   * porcentaje es 10, lo que hay para repartir son ₡100.000 — no el millón.
+   * Se expone en el desglose para que la dueña vea exactamente qué se
+   * dividió, en vez de tener que confiar en un número final.
    */
   base_reparto: Colones;
+  /** El porcentaje aplicado, guardado tal cual para que un cierre viejo se siga viendo igual si el valor cambia después. */
+  porcentaje_propina: number;
   regla_aplicada: ReglaReparto;
   meseras: RepartoMesera[];
 }
@@ -150,17 +156,30 @@ export function calcularReparto(
   cuentas: ReadonlyArray<CuentaDeCierre>,
   meseras: ReadonlyArray<MeseraDelTurno>,
   reglaAplicada: ReglaReparto,
+  porcentajePropina: number,
 ): DesgloseReparto {
   const ids = meseras.map((m) => m.usuario_id);
+  // Bruto: cuánto vendió cada una. Es información de contexto, no lo que se
+  // reparte — se muestra tal cual, sin escalar, junto al monto real.
   const ventas = ventasPorMesera(cuentas, ids);
-  const base = totalizarCuentas(cuentas).salon;
+  const totalSalon = totalizarCuentas(cuentas).salon;
+  const base = aplicarPorcentaje(totalSalon, porcentajePropina);
 
-  const porAtribucion = indexar(repartirPorAtribucion(ventas));
+  // Por atribución cada una se lleva el porcentaje de LO SUYO — se escala cada
+  // venta individual antes de repartir, no el total ya escalado, porque acá no
+  // hay un "pool" que dividir: cada mesera cobra su propio porcentaje.
+  const ventasEscaladas = ventas.map((v) => ({
+    usuario_id: v.usuario_id,
+    ventas: aplicarPorcentaje(v.ventas, porcentajePropina),
+  }));
+
+  const porAtribucion = indexar(repartirPorAtribucion(ventasEscaladas));
   const porHoras = indexar(repartirPorHoras(base, meseras.map((m) => ({ usuario_id: m.usuario_id, horas: m.horas }))));
   const iguales = meseras.length > 0 ? repartirPartesIguales(base, meseras.length) : [];
 
   return {
     base_reparto: base,
+    porcentaje_propina: porcentajePropina,
     regla_aplicada: reglaAplicada,
     meseras: meseras.map((m, i) => ({
       usuario_id: m.usuario_id,
@@ -171,6 +190,11 @@ export function calcularReparto(
       monto_partes_iguales: iguales[i] ?? 0,
     })),
   };
+}
+
+/** El porcentaje se redondea al colón más cercano, igual que un descuento. */
+function aplicarPorcentaje(monto: Colones, porcentaje: number): Colones {
+  return Math.round((monto * porcentaje) / 100);
 }
 
 /** El monto que manda hoy, según la regla activa. */

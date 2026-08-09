@@ -443,8 +443,10 @@ export interface CierreCompleto {
   total_cobrado: Colones;
 
   regla_aplicada: ReglaReparto;
-  /** Lo que se reparte en las reglas por horas y partes iguales: el salón. */
+  /** Lo que efectivamente se reparte: el `porcentaje_propina` del salón, no el 100%. */
   base_reparto: Colones;
+  /** El porcentaje aplicado ese día, guardado tal cual para que el cierre no cambie si el valor se ajusta después. */
+  porcentaje_propina: number;
   meseras: MeseraDelCierre[];
 
   formas_pago: DesglosePorFormaPago[];

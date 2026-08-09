@@ -229,6 +229,7 @@ export class CierreService {
       orderBy: { hora_entrada: 'asc' },
     });
 
+    const porcentajePropina = await this.config.porcentajePropina();
     const reparto = calcularReparto(
       paraTotalizar,
       registros.map((r) => ({
@@ -236,6 +237,7 @@ export class CierreService {
         horas: Number(horasTrabajadas(r.hora_entrada, r.hora_salida).toFixed(2)),
       })),
       regla,
+      porcentajePropina,
     );
 
     const meseras: MeseraDelCierre[] = registros.map((r, i) => {
@@ -290,6 +292,7 @@ export class CierreService {
 
       regla_aplicada: regla,
       base_reparto: reparto.base_reparto,
+      porcentaje_propina: reparto.porcentaje_propina,
       meseras,
 
       formas_pago: formasPago,

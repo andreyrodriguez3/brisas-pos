@@ -26,7 +26,7 @@ export function AdminLayout() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="flex flex-wrap items-center gap-4 border-b bg-white px-6 py-3">
+      <header className="flex flex-wrap items-center gap-4 border-b border-slate-200/70 bg-white px-6 py-3 shadow-sm">
         <h1 className="text-lg font-bold text-marca">Administración</h1>
         <nav className="flex flex-1 flex-wrap gap-1">
           {SECCIONES.map((s) => (
@@ -68,6 +68,8 @@ export function AdminLayout() {
 const QUE_HACE: Record<string, string> = {
   REGLA_REPARTO:
     'Cuál de los tres repartos manda. El cierre igual muestra los tres, así que se puede cambiar viendo números reales.',
+  PORCENTAJE_PROPINA:
+    'Porcentaje del total de salón que se reparte entre las meseras — el de servicio que ya viene incluido en cada precio. Si un día entran ₡1.000.000 de salón, con 10% se reparten ₡100.000.',
   PRECIO_ENVASE: 'Colones por envase. Las cuentas ya abiertas no cambian.',
   MIN_ALERTA_COCINA: 'Minutos para que la comanda se ponga naranja en cocina.',
   MIN_URGENTE_COCINA: 'Minutos para que se ponga roja.',

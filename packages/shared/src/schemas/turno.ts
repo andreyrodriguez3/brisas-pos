@@ -56,6 +56,8 @@ export const filtroAuditoriaSchema = z.object({
   accion: z.nativeEnum(AccionAuditoria).optional(),
   cuenta_id: z.coerce.number().int().positive().optional(),
   limite: z.coerce.number().int().min(1).max(500).default(200),
+  /** Cursor para "Cargar más": trae registros más viejos que este id. */
+  antes_de_id: z.coerce.number().int().positive().optional(),
 });
 export type FiltroAuditoriaDto = z.infer<typeof filtroAuditoriaSchema>;
 
