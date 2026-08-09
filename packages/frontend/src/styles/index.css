@@ -32,7 +32,9 @@
   .boton {
     @apply inline-flex min-h-boton-normal items-center justify-center rounded-lg px-4
            font-semibold shadow-sm transition active:scale-[0.98] disabled:cursor-not-allowed
-           disabled:opacity-40 disabled:shadow-none;
+           disabled:opacity-40 disabled:shadow-none
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca/50
+           focus-visible:ring-offset-2;
   }
 
   .boton-primario {
@@ -51,7 +53,8 @@
   .boton-cocina {
     @apply flex min-h-boton-cocina w-full items-center justify-center rounded-xl
            text-cocina-lg font-bold uppercase tracking-wide text-white shadow-sm
-           active:scale-[0.98];
+           active:scale-[0.98]
+           focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/70;
   }
 
   /* ── Estados de la comanda ───────────────────────────────────────────── */
@@ -82,7 +85,9 @@
    */
   .tarjeta {
     @apply rounded-xl border border-slate-200/70 bg-white p-4
-           shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_20px_-12px_rgba(15,23,42,0.12)];
+           shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_20px_-12px_rgba(15,23,42,0.12)]
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca/50
+           focus-visible:ring-offset-2;
   }
 
   /*

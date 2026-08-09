@@ -108,9 +108,11 @@ export function HojaOpciones({ producto, onAgregar, onCerrar }: Props) {
                   type="button"
                   aria-pressed={v.id === variante.id}
                   onClick={() => setVariante(v)}
-                  className={`min-h-tactil rounded-xl border-2 p-3 text-left ${
-                    v.id === variante.id ? 'border-marca bg-marca-claro' : 'border-slate-200'
-                  }`}
+                  className={`min-h-tactil rounded-xl border-2 p-3 text-left transition active:scale-[0.98]
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca/50
+                    focus-visible:ring-offset-2 ${
+                      v.id === variante.id ? 'border-marca bg-marca-claro' : 'border-slate-200'
+                    }`}
                 >
                   <span className="block font-medium">{v.etiqueta}</span>
                   <span className="block text-sm text-slate-600">
@@ -145,9 +147,11 @@ export function HojaOpciones({ producto, onAgregar, onCerrar }: Props) {
                     type="button"
                     aria-pressed={puesta}
                     onClick={() => alternar(grupo, opcion)}
-                    className={`flex min-h-tactil items-center gap-3 rounded-xl border-2 px-3 text-left ${
-                      puesta ? 'border-marca bg-marca-claro' : 'border-slate-200'
-                    }`}
+                    className={`flex min-h-tactil items-center gap-3 rounded-xl border-2 px-3 text-left
+                      transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2
+                      focus-visible:ring-marca/50 focus-visible:ring-offset-2 ${
+                        puesta ? 'border-marca bg-marca-claro' : 'border-slate-200'
+                      }`}
                   >
                     <span
                       aria-hidden
@@ -178,7 +182,10 @@ export function HojaOpciones({ producto, onAgregar, onCerrar }: Props) {
               aria-label="Menos"
               disabled={cantidad <= 1}
               onClick={() => setCantidad((c) => Math.max(1, c - 1))}
-              className="min-h-tactil min-w-tactil rounded-xl border-2 border-slate-200 text-2xl font-bold disabled:opacity-30"
+              className="min-h-tactil min-w-tactil rounded-xl border-2 border-slate-200 text-2xl font-bold
+                transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2
+                focus-visible:ring-marca/50 focus-visible:ring-offset-2 disabled:opacity-30
+                disabled:active:scale-100"
             >
               −
             </button>
@@ -187,7 +194,9 @@ export function HojaOpciones({ producto, onAgregar, onCerrar }: Props) {
               type="button"
               aria-label="Más"
               onClick={() => setCantidad((c) => c + 1)}
-              className="min-h-tactil min-w-tactil rounded-xl border-2 border-slate-200 text-2xl font-bold"
+              className="min-h-tactil min-w-tactil rounded-xl border-2 border-slate-200 text-2xl font-bold
+                transition active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2
+                focus-visible:ring-marca/50 focus-visible:ring-offset-2"
             >
               +
             </button>

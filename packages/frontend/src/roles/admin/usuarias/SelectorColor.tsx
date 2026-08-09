@@ -37,6 +37,8 @@ export function SelectorColor({ paleta, valor, onCambio, usuariaId, exigirUnico 
               aria-pressed={elegido}
               onClick={() => onCambio(color.hex)}
               className={`flex w-full items-center gap-2 rounded-lg border-2 p-2 text-left transition
+                active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2
+                focus-visible:ring-marca/50 focus-visible:ring-offset-2
                 ${elegido ? 'border-slate-900 bg-slate-50' : 'border-slate-200'}
                 ${tomado ? 'cursor-not-allowed opacity-40' : 'hover:border-slate-400'}`}
             >
