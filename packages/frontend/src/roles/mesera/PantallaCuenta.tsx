@@ -37,7 +37,7 @@ export function PantallaCuenta() {
   return (
     <div className="flex flex-1 flex-col pb-24">
       <header
-        className="border-b-4 bg-white px-4 py-3"
+        className="border-b-4 bg-white px-4 py-3 shadow-sm"
         style={{ borderBottomColor: c.mesera_color ?? '#475569' }}
       >
         <button onClick={() => navegar('/mesera')} className="text-sm text-slate-500">
