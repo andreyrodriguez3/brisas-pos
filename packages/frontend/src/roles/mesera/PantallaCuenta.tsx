@@ -1,4 +1,4 @@
-import { formatearColones, type EstadoPedido, type LineaCompleta } from '@brisas/shared';
+import { EstadoPedido, formatearColones, type LineaCompleta } from '@brisas/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { endpoints } from '../../shared/api/endpoints';
@@ -77,11 +77,16 @@ export function PantallaCuenta() {
               <Insignia tono={ESTADO[pedido.estado as EstadoPedido].tono}>
                 {ESTADO[pedido.estado as EstadoPedido].texto}
               </Insignia>
-              <span className="ml-auto text-sm text-slate-500">
-                {new Date(pedido.creado_en).toLocaleTimeString('es-CR', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+              <span className="ml-auto flex items-center gap-2">
+                <span className="text-sm text-slate-500">
+                  {new Date(pedido.creado_en).toLocaleTimeString('es-CR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+                {pedido.estado === EstadoPedido.LISTO && (
+                  <BotonEntregar pedidoId={pedido.id} cuentaId={cuentaId} />
+                )}
               </span>
             </header>
 
@@ -113,6 +118,33 @@ export function PantallaCuenta() {
         </button>
       </footer>
     </div>
+  );
+}
+
+/**
+ * La mesera también puede marcar ENTREGADO, además de cocina — es quien de
+ * verdad sabe cuándo el plato salió de la cocina. Sin diálogo de confirmación:
+ * un toque, y el cambio queda auditado igual que cualquier otro.
+ */
+function BotonEntregar({ pedidoId, cuentaId }: { pedidoId: number; cuentaId: number }) {
+  const cliente = useQueryClient();
+
+  const entregar = useMutation({
+    mutationFn: () => endpoints.pedidos.cambiarEstado(pedidoId, EstadoPedido.ENTREGADO),
+    onSuccess: () => {
+      void cliente.invalidateQueries({ queryKey: CLAVES_MESERA.cuenta(cuentaId) });
+      void cliente.invalidateQueries({ queryKey: CLAVES_MESERA.cuentas });
+    },
+  });
+
+  return (
+    <button
+      disabled={entregar.isPending}
+      onClick={() => entregar.mutate()}
+      className="shrink-0 rounded-lg bg-marca px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+    >
+      {entregar.isPending ? 'Marcando…' : 'Marcar entregado'}
+    </button>
   );
 }
 
