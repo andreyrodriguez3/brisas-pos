@@ -1,4 +1,5 @@
 import { Logger } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import {
   ConnectedSocket,
   MessageBody,
@@ -11,13 +12,22 @@ import {
 import {
   EventosCliente,
   EventosServidor,
+  Rol,
   SalaRealtime,
   type PayloadCuenta,
+  type PayloadJwt,
   type PayloadPedidoEstado,
   type PayloadPedidoNuevo,
   type PayloadUnirse,
 } from '@brisas/shared';
 import { Server, Socket } from 'socket.io';
+
+/** A qué sala puede entrar cada rol. ADMIN entra a cualquiera (ver `puedeUnirse`). */
+const SALA_POR_ROL: Partial<Record<Rol, SalaRealtime>> = {
+  [Rol.COCINA]: SalaRealtime.COCINA,
+  [Rol.MESERA]: SalaRealtime.MESERAS,
+  [Rol.CAJA]: SalaRealtime.CAJA,
+};
 
 /**
  * Gateway de Socket.IO. Tres salas: `cocina`, `caja` y `meseras`.
@@ -27,6 +37,12 @@ import { Server, Socket } from 'socket.io';
  * cuando su pedido pasa a LISTO.
  *
  * CORS abierto: son dispositivos de la LAN del restaurante entrando por IP.
+ *
+ * ⚠️ La conexión SÍ pide el mismo JWT que ya usa el REST — sin login nuevo, sin
+ * que nadie tenga que registrar nada a mano: la mesera ya lo tiene desde que
+ * entró con su PIN, y la tablet de cocina desde que arrancó sola. Sin esto,
+ * cualquier dispositivo en la LAN podía escuchar en tiempo real cada pedido,
+ * cada cuenta y cada cobro sin loguearse.
  */
 @WebSocketGateway({ cors: { origin: true, credentials: true } })
 export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -35,8 +51,24 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   private readonly logger = new Logger('Realtime');
 
-  handleConnection(cliente: Socket) {
-    this.logger.log(`Conectado ${cliente.id}`);
+  constructor(private readonly jwt: JwtService) {}
+
+  async handleConnection(cliente: Socket) {
+    const token = cliente.handshake.auth?.token as string | undefined;
+    if (!token) {
+      this.logger.warn(`Conexión sin token, se cierra: ${cliente.id}`);
+      cliente.disconnect(true);
+      return;
+    }
+
+    try {
+      const usuario = await this.jwt.verifyAsync<PayloadJwt>(token);
+      cliente.data.usuario = usuario;
+      this.logger.log(`Conectado ${cliente.id} (${usuario.rol})`);
+    } catch {
+      this.logger.warn(`Token inválido, se cierra: ${cliente.id}`);
+      cliente.disconnect(true);
+    }
   }
 
   handleDisconnect(cliente: Socket) {
@@ -49,9 +81,22 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       this.logger.warn(`Sala desconocida: ${sala}`);
       return { ok: false };
     }
+
+    const usuario = cliente.data.usuario as PayloadJwt | undefined;
+    if (!usuario || !this.puedeUnirse(usuario.rol, sala)) {
+      this.logger.warn(`${cliente.id} (${usuario?.rol ?? 'sin rol'}) intentó entrar a "${sala}"`);
+      return { ok: false };
+    }
+
     void cliente.join(sala);
     this.logger.log(`${cliente.id} entró a "${sala}"`);
     return { ok: true, sala };
+  }
+
+  /** El rol de cada dispositivo solo entra a SU sala. ADMIN (la dueña) entra a cualquiera. */
+  private puedeUnirse(rol: Rol, sala: SalaRealtime): boolean {
+    if (rol === Rol.ADMIN) return true;
+    return SALA_POR_ROL[rol] === sala;
   }
 
   @SubscribeMessage(EventosCliente.SALIR)
