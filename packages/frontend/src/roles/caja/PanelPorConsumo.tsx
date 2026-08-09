@@ -159,11 +159,11 @@ export function PanelPorConsumo({ cuentaId, cobro, deshabilitado, onCambio }: Pr
                 <li key={linea.id}>
                   <button
                     onClick={() => setSeleccionada(elegida ? null : linea.id)}
-                    className={`w-full rounded-lg border-2 p-2 text-left transition active:scale-[0.98]
+                    className={`w-full rounded-lg border p-2 text-left transition active:scale-[0.98]
                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca/50
                       focus-visible:ring-offset-2 ${
                         elegida
-                          ? 'border-marca bg-marca-claro'
+                          ? 'border-marca bg-marca-claro ring-2 ring-marca/20 ring-offset-2'
                           : asignados.length > 0
                             ? 'border-transparent bg-slate-50'
                             : 'border-amber-300 bg-amber-50'

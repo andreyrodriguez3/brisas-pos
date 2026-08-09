@@ -174,10 +174,12 @@ function BotonCanal({
       type="button"
       aria-pressed={elegido}
       onClick={onClick}
-      className={`min-h-tactil rounded-xl border-2 p-3 text-left transition active:scale-[0.98]
+      className={`min-h-tactil rounded-xl border p-3 text-left transition active:scale-[0.98]
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca/50
         focus-visible:ring-offset-2 ${
-          elegido ? 'border-marca bg-marca-claro' : 'border-slate-200 bg-white'
+          elegido
+            ? 'border-marca bg-marca-claro ring-2 ring-marca/20 ring-offset-2'
+            : 'border-slate-200 bg-white'
         }`}
     >
       <span className="block font-semibold">{titulo}</span>
