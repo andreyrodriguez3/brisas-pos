@@ -26,7 +26,7 @@ export function AdminLayout() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="flex flex-wrap items-center gap-4 border-b bg-white px-6 py-3">
+      <header className="flex flex-wrap items-center gap-4 border-b border-slate-200/70 bg-white px-6 py-3 shadow-sm">
         <h1 className="text-lg font-bold text-marca">Administración</h1>
         <nav className="flex flex-1 flex-wrap gap-1">
           {SECCIONES.map((s) => (
