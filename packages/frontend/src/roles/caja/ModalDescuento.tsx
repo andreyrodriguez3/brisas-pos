@@ -105,11 +105,13 @@ export function ModalDescuento({ cuentaId, total, abierto, onCerrar, onListo }: 
               key={t.valor}
               type="button"
               onClick={() => setTipo(t.valor)}
-              className={`rounded-lg border-2 p-3 text-left ${
-                tipo === t.valor
-                  ? 'border-marca bg-marca-claro'
-                  : 'border-slate-200 hover:border-slate-300'
-              }`}
+              className={`rounded-lg border p-3 text-left transition active:scale-[0.98]
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca/50
+                focus-visible:ring-offset-2 ${
+                  tipo === t.valor
+                    ? 'border-marca bg-marca-claro ring-2 ring-marca/20 ring-offset-2'
+                    : 'border-slate-200 hover:border-slate-300'
+                }`}
             >
               <span className="block font-semibold">{t.etiqueta}</span>
               <span className="block text-xs text-slate-500">{t.ayuda}</span>

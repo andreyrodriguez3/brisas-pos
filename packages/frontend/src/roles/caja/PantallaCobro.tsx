@@ -107,11 +107,13 @@ export function PantallaCobro() {
                 n_partes: m.valor === ModoDivision.PARTES_IGUALES ? (e.n_partes ?? 2) : null,
               })
             }
-            className={`rounded-xl border-2 p-4 text-left transition disabled:cursor-not-allowed disabled:opacity-60 ${
-              e.modo === m.valor
-                ? 'border-marca bg-marca-claro'
-                : 'border-slate-200 bg-white hover:border-slate-300'
-            }`}
+            className={`rounded-xl border p-4 text-left transition active:scale-[0.98]
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-marca/50
+              focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100 ${
+                e.modo === m.valor
+                  ? 'border-marca bg-marca-claro ring-2 ring-marca/20 ring-offset-2'
+                  : 'border-slate-200 bg-white hover:border-slate-300'
+              }`}
           >
             <span className="block font-bold">{m.titulo}</span>
             <span className="block text-sm text-slate-600">{m.ayuda}</span>
