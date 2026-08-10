@@ -19,8 +19,13 @@ import { zColones, zId, zMotivo } from './comunes';
 export const aplicarDescuentoSchema = z
   .object({
     tipo: z.nativeEnum(TipoDescuento),
-    /** Colones si MONTO · 0–100 si PORCENTAJE · se ignora si CORTESIA. */
-    valor: z.number().int('El valor debe ser entero').min(0).default(0),
+    /**
+     * Colones si MONTO · 0–100 si PORCENTAJE · se ignora si CORTESIA.
+     * Reutiliza `zColones` para heredar su tope superior — un porcentaje
+     * nunca se acerca a ese límite, así que no interfiere con el 0–100 que
+     * se valida abajo.
+     */
+    valor: zColones.default(0),
     motivo: zMotivo,
   })
   .superRefine((datos, ctx) => {
@@ -89,7 +94,9 @@ export const asignarLineasSchema = z.object({
     z.object({
       linea_id: zId,
       comensales: z
-        .array(z.object({ comensal_id: zId, partes: z.number().int().min(1).default(1) }))
+        .array(
+          z.object({ comensal_id: zId, partes: z.number().int().min(1).max(50).default(1) }),
+        )
         // Vacío = desasignar la línea. Es una acción válida: la caja se
         // equivocó y la quiere volver a repartir.
         .max(20),
