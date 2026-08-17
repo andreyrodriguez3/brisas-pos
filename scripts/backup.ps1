@@ -21,6 +21,12 @@
   RESTAURACIÓN: usá scripts\restaurar.ps1, que además verifica el respaldo
   antes de pisar la base en uso. Probala durante la instalación, con el
   restaurante cerrado — un respaldo que nunca se restauró no es un respaldo.
+
+  ⚠️ La base incluye nombres y teléfonos de clientes de pedidos para llevar,
+  sin cifrar. La llave USB de $UnidadUsb queda conectada todo el tiempo: si se
+  pierde o la roban, esos datos se van con ella. Activá BitLocker To Go sobre
+  esa unidad (ver scripts\instalacion-windows.md, sección 5) — este script no
+  cifra nada por su cuenta.
 #>
 
 [CmdletBinding()]

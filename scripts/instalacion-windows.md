@@ -120,6 +120,10 @@ Programalo en el **Programador de tareas** (Task Scheduler):
 Dejá una **llave USB conectada permanentemente** en `E:`. El script copia ahí además de la carpeta local. Si la letra es otra, pasala:
 `-File ... -UnidadUsb F:`
 
+> ⚠️ La base tiene nombres y teléfonos de clientes de pedidos para llevar, sin cifrar. Si esa llave se pierde o la roban, esos datos se van con ella. Cifrala con **BitLocker To Go** antes de dejarla conectada (clic derecho sobre la unidad en el Explorador → *Activar BitLocker*): una vez activado, Windows la desbloquea solo en esa PC y no vuelve a pedir nada en el día a día.
+
+Sin la USB conectada el respaldo local se hace igual — la advertencia sale en el log, no frena nada.
+
 Para respaldos en caliente más seguros, instalá `sqlite3.exe` y ponelo en el PATH. Sin él, el script copia los archivos, que también sirve.
 
 ### Probar la restauración — obligatorio
