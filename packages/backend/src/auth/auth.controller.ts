@@ -1,4 +1,5 @@
 import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { loginSchema, type LoginDto, type PayloadJwt } from '@brisas/shared';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { AuthService } from './auth.service';
@@ -16,7 +17,13 @@ export class AuthController {
     return this.auth.usuariosParaLogin();
   }
 
+  /**
+   * Límite propio, más estricto que el global: `AuthService` ya bloquea a una
+   * usuaria tras 5 PIN fallidos, pero eso es POR usuaria — nada frenaba a un
+   * dispositivo que probara PINs contra TODAS las usuarias en paralelo.
+   */
   @Publico()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @HttpCode(200)
   @Post('login')
   login(@Body(new ZodValidationPipe(loginSchema)) dto: LoginDto) {
