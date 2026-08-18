@@ -10,7 +10,7 @@
       "Dos productos de la transcripción anterior NO aparecen en el PDF oficial y se sacan del menú: 'Arroz con camarones' (boca) y 'Batido de chocolate'. Si en algún momento se confirma que siguen vendiéndose, hay que agregarlos de nuevo.",
       "Hay 18 productos con rango de precio del tipo '3500-4500'. Se modelan como DOS VARIANTES del mismo producto. Las etiquetas ('Pequeño'/'Grande') son una SUPOSICIÓN — el PDF oficial tampoco aclara qué distingue cada precio (tamaño, media/entera, con o sin carne). Sigue pendiente confirmar con la dueña.",
       "Los platillos que dicen 'con papas o yuca' se modelaron con un grupo de opción obligatorio de selección única, sin costo extra.",
-      "CONFIRMADO por la dueña (ago 2026): los refrescos embotellados (Tropical, Gaseosa, Jugo de tomate — botellas de vidrio) valen ₡1000 cada uno. Cervezas (Imperial, Pilsen, Rock Ice, Bavaria, Heineken) y vinos (Riunite, blanco, tinto) SIGUEN sin precio: quedan con precio null y activo=false hasta que se confirmen.",
+      "CONFIRMADO por la dueña por WhatsApp (17 ago 2026): precios completos de cervezas, vinos y refrescos embotellados. Cervezas nacionales (Imperial, Imperial Light, Imperial Silver, Pilsen) ₡1500. Cervezas premium (Bavaria Gold/Light/Máster/Sol, Corona, Heineken, Heineken 0) + bebidas en lata (Michelada Imperial, Adán y Eva de frutos rojos) + Vaso michelado, todas ₡2000. Vinos (Riunite, blanco, tinto) ₡3500 parejo. Jugo de tomate ₡800. Tropical (blanco/melocotón/frutas) y Gaseosa ₡1000. 'Cerveza Rock Ice' no vino en su lista — sigue sin precio y desactivada.",
       "'Salchipapas' sigue sin aparecer en la sección de Comidas rápidas del menú oficial — solo en el menú infantil (₡3500). Sigue desactivada para adultos hasta confirmar con la dueña.",
       "CONFIRMADO por la dueña (ago 2026): los precios del menú YA INCLUYEN el IVA 13% y el 10% de servicio. El sistema NO calcula impuestos: el total es la suma simple de las líneas. Ver clave de configuración PRECIOS_INCLUYEN_IMPUESTOS = true.",
       "CONFIRMADO por la dueña (ago 2026): el envase plástico se cobra a ₡200 por unidad, precio único.",
@@ -931,27 +931,43 @@
       "codigo": "REFRESCOS_LICORES",
       "nombre": "Refrescos, cervezas y vinos",
       "orden": 9,
-      "nota": "Confirmado por la dueña (ago 2026): los refrescos embotellados (Tropical, Gaseosa, Jugo de tomate) valen ₡1000, botella de vidrio. Cervezas y vinos siguen sin precio y desactivados hasta que la dueña los confirme.",
+      "nota": "Confirmado por la dueña por WhatsApp (17 ago 2026). 'Cerveza Rock Ice' no vino en su lista de precios — sigue sin precio y desactivada hasta que la confirme aparte.",
       "productos": [
         {
           "nombre_es": "Cerveza Imperial",
           "variantes": [
             {
               "etiqueta": "Único",
-              "precio": null
+              "precio": 1500
             }
-          ],
-          "activo": false
+          ]
+        },
+        {
+          "nombre_es": "Cerveza Imperial Light",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 1500
+            }
+          ]
+        },
+        {
+          "nombre_es": "Cerveza Imperial Silver",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 1500
+            }
+          ]
         },
         {
           "nombre_es": "Cerveza Pilsen",
           "variantes": [
             {
               "etiqueta": "Único",
-              "precio": null
+              "precio": 1500
             }
-          ],
-          "activo": false
+          ]
         },
         {
           "nombre_es": "Cerveza Rock Ice",
@@ -961,27 +977,103 @@
               "precio": null
             }
           ],
-          "activo": false
+          "activo": false,
+          "nota": "No vino en la lista de precios de la dueña; confirmar aparte."
         },
         {
-          "nombre_es": "Cerveza Bavaria",
+          "nombre_es": "Cerveza Bavaria Gold",
           "variantes": [
             {
               "etiqueta": "Único",
-              "precio": null
+              "precio": 2000
             }
-          ],
-          "activo": false
+          ]
+        },
+        {
+          "nombre_es": "Cerveza Bavaria Light",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Cerveza Bavaria Máster",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Cerveza Bavaria Sol",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Cerveza Corona",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
         },
         {
           "nombre_es": "Cerveza Heineken",
           "variantes": [
             {
               "etiqueta": "Único",
-              "precio": null
+              "precio": 2000
             }
-          ],
-          "activo": false
+          ]
+        },
+        {
+          "nombre_es": "Cerveza Heineken 0",
+          "nombre_en": "Heineken 0 (non-alcoholic)",
+          "descripcion": "Sin alcohol",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Michelada Imperial (lata)",
+          "nombre_en": "Canned michelada (Imperial)",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Adán y Eva de frutos rojos (lata)",
+          "nombre_en": "Adán y Eva red berries (canned)",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Vaso michelado",
+          "nombre_en": "Michelada glass",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
         },
         {
           "nombre_es": "Jugo de tomate",
@@ -989,7 +1081,7 @@
           "variantes": [
             {
               "etiqueta": "Único",
-              "precio": 1000
+              "precio": 800
             }
           ]
         },
@@ -998,34 +1090,51 @@
           "variantes": [
             {
               "etiqueta": "Único",
-              "precio": null
+              "precio": 3500
             }
-          ],
-          "activo": false
+          ]
         },
         {
           "nombre_es": "Vino blanco",
           "variantes": [
             {
               "etiqueta": "Único",
-              "precio": null
+              "precio": 3500
             }
-          ],
-          "activo": false
+          ]
         },
         {
           "nombre_es": "Vino tinto",
           "variantes": [
             {
               "etiqueta": "Único",
-              "precio": null
+              "precio": 3500
             }
-          ],
-          "activo": false
+          ]
         },
         {
-          "nombre_es": "Tropical",
-          "nombre_en": "Tropical (bottled soft drink)",
+          "nombre_es": "Tropical blanco",
+          "nombre_en": "Tropical white",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 1000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Tropical melocotón",
+          "nombre_en": "Tropical peach",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 1000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Tropical frutas",
+          "nombre_en": "Tropical mixed fruit",
           "variantes": [
             {
               "etiqueta": "Único",
