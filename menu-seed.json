@@ -10,7 +10,7 @@
       "Dos productos de la transcripción anterior NO aparecen en el PDF oficial y se sacan del menú: 'Arroz con camarones' (boca) y 'Batido de chocolate'. Si en algún momento se confirma que siguen vendiéndose, hay que agregarlos de nuevo.",
       "Hay 18 productos con rango de precio del tipo '3500-4500'. Se modelan como DOS VARIANTES del mismo producto. Las etiquetas ('Pequeño'/'Grande') son una SUPOSICIÓN — el PDF oficial tampoco aclara qué distingue cada precio (tamaño, media/entera, con o sin carne). Sigue pendiente confirmar con la dueña.",
       "Los platillos que dicen 'con papas o yuca' se modelaron con un grupo de opción obligatorio de selección única, sin costo extra.",
-      "CONFIRMADO por la dueña por WhatsApp (17 ago 2026): precios completos de cervezas, vinos y refrescos embotellados. Cervezas nacionales (Imperial, Imperial Light, Imperial Silver, Pilsen) ₡1500. Cervezas premium (Bavaria Gold/Light/Máster/Sol, Corona, Heineken, Heineken 0) + bebidas en lata (Michelada Imperial, Adán y Eva de frutos rojos) + Vaso michelado, todas ₡2000. Vinos (Riunite, blanco, tinto) ₡3500 parejo. Jugo de tomate ₡800. Tropical (blanco/melocotón/frutas) y Gaseosa ₡1000. 'Cerveza Rock Ice' no vino en su lista — sigue sin precio y desactivada.",
+      "CONFIRMADO por la dueña por WhatsApp (17 ago 2026): precios completos de cervezas, vinos y refrescos embotellados. Cervezas nacionales (Imperial, Imperial Light, Imperial Silver, Pilsen) ₡1500. Cervezas premium (Bavaria Gold/Light/Máster/Sol, Corona, Heineken, Heineken 0) + bebidas en lata (Michelada Imperial, Adán y Eva de frutos rojos) + Vaso michelado, todas ₡2000. Vinos (Riunite, blanco, tinto) ₡3500 parejo. Jugo de tomate ₡800. Tropical (blanco/melocotón/frutas) y Gaseosa ₡1000. Cerveza Rock Ice ₡2000 (confirmada aparte, no vino en la lista original).",
       "'Salchipapas' sigue sin aparecer en la sección de Comidas rápidas del menú oficial — solo en el menú infantil (₡3500). Sigue desactivada para adultos hasta confirmar con la dueña.",
       "CONFIRMADO por la dueña (ago 2026): los precios del menú YA INCLUYEN el IVA 13% y el 10% de servicio. El sistema NO calcula impuestos: el total es la suma simple de las líneas. Ver clave de configuración PRECIOS_INCLUYEN_IMPUESTOS = true.",
       "CONFIRMADO por la dueña (ago 2026): el envase plástico se cobra a ₡200 por unidad, precio único.",
@@ -931,7 +931,7 @@
       "codigo": "REFRESCOS_LICORES",
       "nombre": "Refrescos, cervezas y vinos",
       "orden": 9,
-      "nota": "Confirmado por la dueña por WhatsApp (17 ago 2026). 'Cerveza Rock Ice' no vino en su lista de precios — sigue sin precio y desactivada hasta que la confirme aparte.",
+      "nota": "Confirmado por la dueña por WhatsApp (17 ago 2026). 'Cerveza Rock Ice' no vino en su lista original, pero confirmó aparte que también va a ₡2000.",
       "productos": [
         {
           "nombre_es": "Cerveza Imperial",
@@ -974,11 +974,9 @@
           "variantes": [
             {
               "etiqueta": "Único",
-              "precio": null
+              "precio": 2000
             }
-          ],
-          "activo": false,
-          "nota": "No vino en la lista de precios de la dueña; confirmar aparte."
+          ]
         },
         {
           "nombre_es": "Cerveza Bavaria Gold",
