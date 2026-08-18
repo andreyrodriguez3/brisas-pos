@@ -61,11 +61,31 @@ export const filtroAuditoriaSchema = z.object({
 });
 export type FiltroAuditoriaDto = z.infer<typeof filtroAuditoriaSchema>;
 
-/** Rango de fechas de los reportes. Días locales, YYYY-MM-DD. */
-export const rangoReporteSchema = z.object({
-  desde: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha inválida').optional(),
-  hasta: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha inválida').optional(),
-});
+/** Un año de sobra para cualquier comparación real que pida la dueña. */
+const DIAS_MAXIMOS_REPORTE = 366;
+
+/**
+ * Rango de fechas de los reportes. Días locales, YYYY-MM-DD.
+ *
+ * El tope entre `desde` y `hasta` no es una regla de negocio: es defensivo,
+ * igual que el resto de los topes de `comunes.ts`. Sin él, `ReportesService`
+ * cargaría en memoria TODAS las cuentas cobradas del rango pedido —bien hoy,
+ * con el volumen de un restaurante; un problema si algún día alguien pide
+ * "desde el primer día del sistema".
+ */
+export const rangoReporteSchema = z
+  .object({
+    desde: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha inválida').optional(),
+    hasta: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha inválida').optional(),
+  })
+  .refine(
+    (r) => {
+      if (!r.desde || !r.hasta) return true;
+      const dias = (Date.parse(r.hasta) - Date.parse(r.desde)) / 86_400_000;
+      return dias >= 0 && dias <= DIAS_MAXIMOS_REPORTE;
+    },
+    { message: `El rango no puede pasar de ${DIAS_MAXIMOS_REPORTE} días`, path: ['hasta'] },
+  );
 export type RangoReporteDto = z.infer<typeof rangoReporteSchema>;
 
 /** Lo usa el cierre forzado para exigir explicación. */

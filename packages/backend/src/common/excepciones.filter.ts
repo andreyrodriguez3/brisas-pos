@@ -35,8 +35,11 @@ export class FiltroExcepciones implements ExceptionFilter {
     } else if (excepcion instanceof Prisma.PrismaClientKnownRequestError) {
       ({ estado, cuerpo } = this.traducirPrisma(excepcion));
     } else if (excepcion instanceof Error) {
+      // El mensaje NO sale en la respuesta: un error inesperado (un bug, una
+      // librería que falla) puede traer rutas de archivo o detalles internos
+      // en su .message. Eso se queda en el log del servidor; quien hizo la
+      // petición solo ve el mensaje genérico ya puesto arriba.
       this.logger.error(excepcion.message, excepcion.stack);
-      cuerpo = { mensaje: excepcion.message };
     }
 
     if (estado >= 500) {

@@ -2,16 +2,20 @@
   "_meta": {
     "restaurante": "Mirador Brisas del Monte",
     "moneda": "CRC",
-    "fuente": "Fotos del menú publicadas en Google Maps (fechas de imagen: mar 2025 y ago 2026)",
-    "fecha_transcripcion": "2026-08-06",
-    "estado": "PROVISIONAL en precios de platillos — envase e impuestos ya confirmados por la dueña",
+    "fuente": "menu brisas m.pdf (menú oficial, 6 páginas) + foto 'Fresas con crema' (Las Brisos) + foto 'Carta de tragos' (Brisas del Monte Bar)",
+    "fecha_transcripcion": "2026-08-17",
+    "estado": "Confirmado en casi todos los precios de comida: el PDF oficial coincide exactamente con la transcripción anterior de Google Maps. Siguen pendientes: qué distingue cada precio en los 18 productos de rango, los precios de refrescos/cervezas/vinos, y si Salchipapas se vende a adultos.",
     "notas_criticas": [
-      "Existen DOS versiones del menú en las fotos. Se tomaron los precios de la versión NUEVA (imágenes fechadas ago 2026). Los precios de la versión vieja (mar 2025) se conservan en el campo 'precio_anterior_2025' solo como referencia histórica; NO deben cargarse al sistema.",
-      "Hay 18 productos con rango de precio del tipo '3500-4500'. Se modelaron como DOS VARIANTES del mismo producto. Las etiquetas ('Pequeño'/'Grande', 'Media'/'Entera') son una SUPOSICIÓN. Confirmar con la dueña qué distingue cada precio (tamaño, media/entera, con o sin carne).",
+      "El PDF oficial confirma, sin cambios, los precios de Platos fuertes, Arroces, Bocas (salvo una excepción, ver abajo), Comidas rápidas, Fuentes, Kids, Extras y Bebidas calientes tal como ya estaban transcritos de las fotos de Google Maps.",
+      "Dos productos de la transcripción anterior NO aparecen en el PDF oficial y se sacan del menú: 'Arroz con camarones' (boca) y 'Batido de chocolate'. Si en algún momento se confirma que siguen vendiéndose, hay que agregarlos de nuevo.",
+      "Hay 18 productos con rango de precio del tipo '3500-4500'. Se modelan como DOS VARIANTES del mismo producto. Las etiquetas ('Pequeño'/'Grande') son una SUPOSICIÓN — el PDF oficial tampoco aclara qué distingue cada precio (tamaño, media/entera, con o sin carne). Sigue pendiente confirmar con la dueña.",
       "Los platillos que dicen 'con papas o yuca' se modelaron con un grupo de opción obligatorio de selección única, sin costo extra.",
-      "La sección 'Refrescos, cervezas y vinos' aparece SIN precios en la foto. Los productos están listados con precio null y activo=false: no se pueden vender hasta que se les cargue precio.",
+      "CONFIRMADO por la dueña por WhatsApp (17 ago 2026): precios completos de cervezas, vinos y refrescos embotellados. Cervezas nacionales (Imperial, Imperial Light, Imperial Silver, Pilsen) ₡1500. Cervezas premium (Bavaria Gold/Light/Máster/Sol, Corona, Heineken, Heineken 0) + bebidas en lata (Michelada Imperial, Adán y Eva de frutos rojos) + Vaso michelado, todas ₡2000. Vinos (Riunite, blanco, tinto) ₡3500 parejo. Jugo de tomate ₡800. Tropical (blanco/melocotón/frutas) y Gaseosa ₡1000. Cerveza Rock Ice ₡2000 (confirmada aparte, no vino en la lista original).",
+      "'Salchipapas' sigue sin aparecer en la sección de Comidas rápidas del menú oficial — solo en el menú infantil (₡3500). Sigue desactivada para adultos hasta confirmar con la dueña.",
       "CONFIRMADO por la dueña (ago 2026): los precios del menú YA INCLUYEN el IVA 13% y el 10% de servicio. El sistema NO calcula impuestos: el total es la suma simple de las líneas. Ver clave de configuración PRECIOS_INCLUYEN_IMPUESTOS = true.",
-      "CONFIRMADO por la dueña (ago 2026): el envase plástico se cobra a ₡200 por unidad, precio único."
+      "CONFIRMADO por la dueña (ago 2026): el envase plástico se cobra a ₡200 por unidad, precio único.",
+      "NUEVO: sección 'Fresas con crema' (foto de la marca 'Las Brisos'). Cada producto ya trae su salsa fija en el nombre (crema, condensada o chocolate); el 'Topping extra' (₡500) es un agregado opcional de chispas de colores o malvaviscos, modelado como grupo de opción no obligatorio.",
+      "NUEVO: sección 'Carta de tragos' (Ron, Whisky, Licores, Tequila), de la foto de la carta del bar. Precio único por trago, sin variantes ni acompañamiento. Se corrigieron erratas evidentes de la foto ('ocuro'→'oscuro', 'Withe'→'White', 'Beylis'→'Baileys') — ver 'nota' en cada producto corregido."
     ]
   },
   "grupos_opcion_compartidos": [
@@ -212,19 +216,6 @@
           ]
         },
         {
-          "nombre_es": "Arroz con camarones (boca)",
-          "nombre_en": "Rice with shrimp",
-          "variantes": [
-            {
-              "etiqueta": "Único",
-              "precio": 4000
-            }
-          ],
-          "grupos_opcion": [
-            "ACOMP_PAPAS_YUCA"
-          ]
-        },
-        {
           "nombre_es": "Burrito",
           "nombre_en": "Burrito",
           "variantes": [
@@ -287,8 +278,7 @@
           ],
           "grupos_opcion": [
             "ACOMP_PAPAS_YUCA"
-          ],
-          "precio_anterior_2025": 4500
+          ]
         },
         {
           "nombre_es": "Pechuga a la plancha en salsa blanca con hongos",
@@ -301,8 +291,7 @@
           ],
           "grupos_opcion": [
             "ACOMP_PAPAS_YUCA"
-          ],
-          "precio_anterior_2025": 5000
+          ]
         },
         {
           "nombre_es": "Cordon Bleu",
@@ -320,8 +309,7 @@
           "grupos_opcion": [
             "ACOMP_PAPAS_YUCA"
           ],
-          "variantes_por_confirmar": true,
-          "precio_anterior_2025": "4000 / 5000"
+          "variantes_por_confirmar": true
         },
         {
           "nombre_es": "Camarón empanizado",
@@ -334,8 +322,7 @@
           ],
           "grupos_opcion": [
             "ACOMP_PAPAS_YUCA"
-          ],
-          "precio_anterior_2025": 6500
+          ]
         },
         {
           "nombre_es": "Camarón al ajillo",
@@ -348,8 +335,7 @@
           ],
           "grupos_opcion": [
             "ACOMP_PAPAS_YUCA"
-          ],
-          "precio_anterior_2025": 6500
+          ]
         },
         {
           "nombre_es": "Filete de pescado",
@@ -362,8 +348,7 @@
           ],
           "grupos_opcion": [
             "ACOMP_PAPAS_YUCA"
-          ],
-          "precio_anterior_2025": 4500
+          ]
         },
         {
           "nombre_es": "Costilla a la BBQ",
@@ -381,8 +366,7 @@
           "grupos_opcion": [
             "ACOMP_PAPAS_YUCA"
           ],
-          "variantes_por_confirmar": true,
-          "precio_anterior_2025": "4600 / 5000"
+          "variantes_por_confirmar": true
         },
         {
           "nombre_es": "Plato de chicharrón",
@@ -400,8 +384,7 @@
           "grupos_opcion": [
             "ACOMP_PAPAS_YUCA"
           ],
-          "variantes_por_confirmar": true,
-          "precio_anterior_2025": "7000 / 8500"
+          "variantes_por_confirmar": true
         },
         {
           "nombre_es": "Surtida",
@@ -417,8 +400,7 @@
               "precio": 12000
             }
           ],
-          "variantes_por_confirmar": true,
-          "precio_anterior_2025": "8800 / 10800"
+          "variantes_por_confirmar": true
         },
         {
           "nombre_es": "Pescado entero",
@@ -431,8 +413,7 @@
           ],
           "grupos_opcion": [
             "ACOMP_PAPAS_YUCA_PATACON"
-          ],
-          "precio_anterior_2025": 6500
+          ]
         },
         {
           "nombre_es": "Picadillo de arracache",
@@ -447,8 +428,7 @@
               "precio": 4300
             }
           ],
-          "variantes_por_confirmar": true,
-          "precio_anterior_2025": "2900 / 3900"
+          "variantes_por_confirmar": true
         },
         {
           "nombre_es": "Sopa azteca",
@@ -458,8 +438,7 @@
               "etiqueta": "Único",
               "precio": 4500
             }
-          ],
-          "precio_anterior_2025": 4000
+          ]
         },
         {
           "nombre_es": "Fajitas de pollo",
@@ -472,8 +451,7 @@
           ],
           "grupos_opcion": [
             "ACOMP_PAPAS_YUCA"
-          ],
-          "precio_anterior_2025": 4300
+          ]
         },
         {
           "nombre_es": "Alitas en BBQ",
@@ -486,8 +464,7 @@
           ],
           "grupos_opcion": [
             "ACOMP_PAPAS_YUCA"
-          ],
-          "precio_anterior_2025": 4000
+          ]
         }
       ]
     },
@@ -507,8 +484,7 @@
           ],
           "grupos_opcion": [
             "ACOMP_PAPAS_YUCA"
-          ],
-          "precio_anterior_2025": 5000
+          ]
         },
         {
           "nombre_es": "Arroz cantonés",
@@ -521,8 +497,7 @@
           ],
           "grupos_opcion": [
             "ACOMP_PAPAS_YUCA"
-          ],
-          "precio_anterior_2025": 5000
+          ]
         },
         {
           "nombre_es": "Arroz con carne en salsa",
@@ -535,8 +510,7 @@
           ],
           "grupos_opcion": [
             "ACOMP_PAPAS_YUCA"
-          ],
-          "precio_anterior_2025": 5000
+          ]
         },
         {
           "nombre_es": "Casado",
@@ -550,8 +524,7 @@
           ],
           "grupos_opcion": [
             "CASADO_PROTEINA"
-          ],
-          "precio_anterior_2025": 4000
+          ]
         }
       ]
     },
@@ -572,7 +545,6 @@
           "grupos_opcion": [
             "EMPANADA_RELLENO"
           ],
-          "precio_anterior_2025": 2500,
           "nota": "En el menú viejo cada relleno era un producto aparte a ₡2500. En el nuevo es un solo producto a ₡3500 con relleno a escoger."
         },
         {
@@ -603,8 +575,7 @@
               "precio": 4000
             }
           ],
-          "variantes_por_confirmar": true,
-          "precio_anterior_2025": "2800 / 3500"
+          "variantes_por_confirmar": true
         },
         {
           "nombre_es": "Chorreadas",
@@ -614,8 +585,7 @@
               "etiqueta": "Único",
               "precio": 3500
             }
-          ],
-          "precio_anterior_2025": 2500
+          ]
         },
         {
           "nombre_es": "Sándwich de carne",
@@ -625,8 +595,7 @@
               "etiqueta": "Único",
               "precio": 3800
             }
-          ],
-          "precio_anterior_2025": 3200
+          ]
         },
         {
           "nombre_es": "Tortilla de queso",
@@ -636,8 +605,7 @@
               "etiqueta": "Único",
               "precio": 3500
             }
-          ],
-          "precio_anterior_2025": 2500
+          ]
         },
         {
           "nombre_es": "Tamales",
@@ -659,7 +627,7 @@
             }
           ],
           "activo": false,
-          "nota": "Aparece en el menú viejo a ₡3000 y en el menú infantil nuevo a ₡3500. No aparece en la sección de comidas rápidas del menú nuevo. CONFIRMAR si sigue vendiéndose para adultos."
+          "nota": "Aparece en el menú infantil nuevo a ₡3500, pero sigue sin aparecer en la sección de comidas rápidas para adultos. CONFIRMAR si se sigue vendiendo para adultos y a qué precio."
         }
       ]
     },
@@ -871,7 +839,7 @@
       "codigo": "BATIDOS",
       "nombre": "Batidos",
       "orden": 8,
-      "nota": "Todos a ₡1300 y ₡1800. En la foto aparece como '1300 / 1800'. Se asume 1300 = en agua y 1800 = en leche, modelado como dos variantes para que el precio quede explícito. CONFIRMAR con la dueña.",
+      "nota": "Todos a ₡1300 y ₡1800. En la foto y en el PDF oficial aparece como '1300 / 1800'. Se asume 1300 = en agua y 1800 = en leche, modelado como dos variantes para que el precio quede explícito. CONFIRMAR con la dueña.",
       "productos": [
         {
           "nombre_es": "Batido de crema",
@@ -956,20 +924,6 @@
               "precio": 1800
             }
           ]
-        },
-        {
-          "nombre_es": "Batido de chocolate",
-          "nombre_en": "Chocolate shake",
-          "variantes": [
-            {
-              "etiqueta": "En agua",
-              "precio": 1300
-            },
-            {
-              "etiqueta": "En leche",
-              "precio": 1800
-            }
-          ]
         }
       ]
     },
@@ -977,117 +931,224 @@
       "codigo": "REFRESCOS_LICORES",
       "nombre": "Refrescos, cervezas y vinos",
       "orden": 9,
-      "nota": "SIN PRECIOS EN LA FOTO. Todos entran con activo=false hasta que la dueña entregue la lista de precios.",
+      "nota": "Confirmado por la dueña por WhatsApp (17 ago 2026). 'Cerveza Rock Ice' no vino en su lista original, pero confirmó aparte que también va a ₡2000.",
       "productos": [
         {
           "nombre_es": "Cerveza Imperial",
           "variantes": [
             {
               "etiqueta": "Único",
-              "precio": null
+              "precio": 1500
             }
-          ],
-          "activo": false
+          ]
+        },
+        {
+          "nombre_es": "Cerveza Imperial Light",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 1500
+            }
+          ]
+        },
+        {
+          "nombre_es": "Cerveza Imperial Silver",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 1500
+            }
+          ]
         },
         {
           "nombre_es": "Cerveza Pilsen",
           "variantes": [
             {
               "etiqueta": "Único",
-              "precio": null
+              "precio": 1500
             }
-          ],
-          "activo": false
+          ]
         },
         {
           "nombre_es": "Cerveza Rock Ice",
           "variantes": [
             {
               "etiqueta": "Único",
-              "precio": null
+              "precio": 2000
             }
-          ],
-          "activo": false
+          ]
         },
         {
-          "nombre_es": "Cerveza Bavaria",
+          "nombre_es": "Cerveza Bavaria Gold",
           "variantes": [
             {
               "etiqueta": "Único",
-              "precio": null
+              "precio": 2000
             }
-          ],
-          "activo": false
+          ]
+        },
+        {
+          "nombre_es": "Cerveza Bavaria Light",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Cerveza Bavaria Máster",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Cerveza Bavaria Sol",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Cerveza Corona",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
         },
         {
           "nombre_es": "Cerveza Heineken",
           "variantes": [
             {
               "etiqueta": "Único",
-              "precio": null
+              "precio": 2000
             }
-          ],
-          "activo": false
+          ]
         },
         {
-          "nombre_es": "Jugo de tomate",
+          "nombre_es": "Cerveza Heineken 0",
+          "nombre_en": "Heineken 0 (non-alcoholic)",
+          "descripcion": "Sin alcohol",
           "variantes": [
             {
               "etiqueta": "Único",
-              "precio": null
+              "precio": 2000
             }
-          ],
-          "activo": false
+          ]
+        },
+        {
+          "nombre_es": "Michelada Imperial (lata)",
+          "nombre_en": "Canned michelada (Imperial)",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Adán y Eva de frutos rojos (lata)",
+          "nombre_en": "Adán y Eva red berries (canned)",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Vaso michelado",
+          "nombre_en": "Michelada glass",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Jugo de tomate",
+          "nombre_en": "Tomato juice",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 800
+            }
+          ]
         },
         {
           "nombre_es": "Vino Riunite",
           "variantes": [
             {
               "etiqueta": "Único",
-              "precio": null
+              "precio": 3500
             }
-          ],
-          "activo": false
+          ]
         },
         {
           "nombre_es": "Vino blanco",
           "variantes": [
             {
               "etiqueta": "Único",
-              "precio": null
+              "precio": 3500
             }
-          ],
-          "activo": false
+          ]
         },
         {
           "nombre_es": "Vino tinto",
           "variantes": [
             {
               "etiqueta": "Único",
-              "precio": null
+              "precio": 3500
             }
-          ],
-          "activo": false
+          ]
         },
         {
-          "nombre_es": "Tropical",
+          "nombre_es": "Tropical blanco",
+          "nombre_en": "Tropical white",
           "variantes": [
             {
               "etiqueta": "Único",
-              "precio": null
+              "precio": 1000
             }
-          ],
-          "activo": false
+          ]
+        },
+        {
+          "nombre_es": "Tropical melocotón",
+          "nombre_en": "Tropical peach",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 1000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Tropical frutas",
+          "nombre_en": "Tropical mixed fruit",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 1000
+            }
+          ]
         },
         {
           "nombre_es": "Gaseosa",
+          "nombre_en": "Soda",
           "variantes": [
             {
               "etiqueta": "Único",
-              "precio": null
+              "precio": 1000
             }
-          ],
-          "activo": false
+          ]
         }
       ]
     },
@@ -1173,6 +1234,295 @@
             }
           ],
           "nota": "Nombre transcrito literal de la foto; verificar ortografía correcta."
+        }
+      ]
+    },
+    {
+      "codigo": "FRESAS_CON_CREMA",
+      "nombre": "Fresas con crema",
+      "orden": 12,
+      "nota": "De la foto de la marca 'Las Brisos — Fresas con crema'. Cada producto ya trae su salsa fija (crema, condensada o chocolate); el 'Topping extra' es un agregado opcional aparte.",
+      "productos": [
+        {
+          "nombre_es": "Fresas con crema",
+          "nombre_en": "Strawberries with cream",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 3000
+            }
+          ],
+          "grupos_opcion": [
+            "TOPPING_FRESAS"
+          ]
+        },
+        {
+          "nombre_es": "Fresas con condensada",
+          "nombre_en": "Strawberries with condensed milk",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2500
+            }
+          ],
+          "grupos_opcion": [
+            "TOPPING_FRESAS"
+          ]
+        },
+        {
+          "nombre_es": "Fresas con chocolate",
+          "nombre_en": "Strawberries with chocolate",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2500
+            }
+          ],
+          "grupos_opcion": [
+            "TOPPING_FRESAS"
+          ]
+        }
+      ]
+    },
+    {
+      "codigo": "RON",
+      "nombre": "Ron",
+      "orden": 13,
+      "nota": "De la foto 'Carta de tragos' del bar. Precio único por trago; no aplica acompañamiento ni envase.",
+      "productos": [
+        {
+          "nombre_es": "Flor de caña 7 años",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Centenario 7 años",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Bacardi claro",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Bacardi oscuro",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ],
+          "nota": "La foto dice 'Bacardi ocuro'; se corrige la errata evidente."
+        },
+        {
+          "nombre_es": "Ronrico",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 1500
+            }
+          ]
+        },
+        {
+          "nombre_es": "Ron Colorado",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 1000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "codigo": "WHISKY",
+      "nombre": "Whisky",
+      "orden": 14,
+      "nota": "De la foto 'Carta de tragos' del bar. Precio único por trago; no aplica acompañamiento ni envase.",
+      "productos": [
+        {
+          "nombre_es": "Old Parr 12 años",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 3000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Chivas",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 3000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Johnnie Walker Negro",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 3000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Johnnie Walker Rojo",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
+        },
+        {
+          "nombre_es": "J&B",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Black & White",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ],
+          "nota": "La foto dice 'Black & Withe'; se corrige la errata evidente."
+        },
+        {
+          "nombre_es": "Passport",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "codigo": "LICORES",
+      "nombre": "Licores",
+      "orden": 15,
+      "nota": "De la foto 'Carta de tragos' del bar. Precio único por trago; no aplica acompañamiento ni envase.",
+      "productos": [
+        {
+          "nombre_es": "Cacique",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 1000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Vodka Smirnoff",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Anís",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Baileys arreglado",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 3000
+            }
+          ],
+          "nota": "La foto dice 'Beylis arreglado'; se corrige la errata evidente (Baileys arreglado es un preparado casero típico)."
+        },
+        {
+          "nombre_es": "Jagermeister",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
+        },
+        {
+          "nombre_es": "Valdespino",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 1500
+            }
+          ]
+        },
+        {
+          "nombre_es": "Campari",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "codigo": "TEQUILA",
+      "nombre": "Tequila",
+      "orden": 16,
+      "nota": "De la foto 'Carta de tragos' del bar. Precio único por trago; no aplica acompañamiento ni envase.",
+      "productos": [
+        {
+          "nombre_es": "Jose Cuervo",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 2000
+            }
+          ]
+        },
+        {
+          "nombre_es": "1800 Claro",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 3000
+            }
+          ]
+        },
+        {
+          "nombre_es": "1800 Oscuro",
+          "variantes": [
+            {
+              "etiqueta": "Único",
+              "precio": 3000
+            }
+          ]
         }
       ]
     },
@@ -1267,6 +1617,23 @@
         {
           "nombre": "Carne",
           "precio_extra": 0
+        }
+      ]
+    },
+    {
+      "codigo": "TOPPING_FRESAS",
+      "nombre": "Topping extra",
+      "obligatorio": false,
+      "min": 0,
+      "max": 2,
+      "opciones": [
+        {
+          "nombre": "Chispas de colores",
+          "precio_extra": 500
+        },
+        {
+          "nombre": "Malvaviscos",
+          "precio_extra": 500
         }
       ]
     }
