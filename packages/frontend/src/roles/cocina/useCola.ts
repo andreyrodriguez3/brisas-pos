@@ -1,11 +1,12 @@
 import {
-  EstadoPedido,
+  EstadoLinea,
   EventosServidor,
   SEGUNDOS_DESHACER,
   SalaRealtime,
+  agruparPorPlatillo,
   ordenarCola,
   type ColaCocina,
-  type ComandaCocina,
+  type LineaCocina,
 } from '@brisas/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -33,38 +34,39 @@ const MS_TICK = 10_000;
 const MS_RESPALDO = 30_000;
 
 /** El siguiente estado al tocar la tarjeta, y la palabra que va en el botón. */
-export const AVANCE: Record<string, { siguiente: EstadoPedido; palabra: string } | undefined> = {
-  [EstadoPedido.ENVIADO]: { siguiente: EstadoPedido.EN_PREPARACION, palabra: 'EMPEZAR' },
-  [EstadoPedido.EN_PREPARACION]: { siguiente: EstadoPedido.LISTO, palabra: 'LISTO' },
-  // DECISIÓN: cocina también puede marcar ENTREGADO, y así la comanda sale de
-  // la pantalla cuando la mesera se lleva el plato. Sin esto la columna LISTOS
-  // crece durante todo el servicio y deja de servir de un vistazo.
-  [EstadoPedido.LISTO]: { siguiente: EstadoPedido.ENTREGADO, palabra: 'ENTREGADO' },
+export const AVANCE: Record<string, { siguiente: EstadoLinea; palabra: string } | undefined> = {
+  [EstadoLinea.ENVIADO]: { siguiente: EstadoLinea.EN_PREPARACION, palabra: 'EMPEZAR' },
+  [EstadoLinea.EN_PREPARACION]: { siguiente: EstadoLinea.LISTO, palabra: 'LISTO' },
+  // DECISIÓN: cocina también puede marcar ENTREGADO, y así el platillo sale de
+  // la pantalla cuando la mesera se lo lleva. Sin esto la columna LISTOS crece
+  // durante todo el servicio y deja de servir de un vistazo.
+  [EstadoLinea.LISTO]: { siguiente: EstadoLinea.ENTREGADO, palabra: 'ENTREGADO' },
 };
 
 /** La acción que el botón grande DESHACER puede revertir. */
 export interface AccionDeshacer {
-  pedido_id: number;
+  linea_id: number;
+  producto_nombre: string;
   nombre_cliente: string;
   palabra: string;
-  estado_anterior: EstadoPedido;
+  estado_anterior: EstadoLinea;
   /** Marca de tiempo local en la que deja de poder deshacerse. */
   vence_en: number;
 }
 
 export interface UsoCola {
-  comandas: ComandaCocina[];
+  lineas: LineaCocina[];
   umbrales: { alerta: number; urgente: number };
   /** Hora del SERVIDOR corregida al reloj local. Se repinta sola cada 10 s. */
   ahora: number;
   conectado: boolean;
   cargando: boolean;
-  /** Comandas que acaban de entrar: parpadean unos segundos. */
+  /** Platillos de una comanda que acaba de entrar: parpadean unos segundos. */
   recienLlegadas: Set<number>;
-  /** Comandas cuyo cambio de estado todavía va en camino. No se tocan de nuevo. */
+  /** Platillos cuyo cambio de estado todavía va en camino. No se tocan de nuevo. */
   enVuelo: Set<number>;
   error: string | null;
-  avanzar: (comanda: ComandaCocina) => void;
+  avanzar: (linea: LineaCocina) => void;
   deshacer: AccionDeshacer | null;
   ejecutarDeshacer: () => void;
 }
@@ -103,6 +105,8 @@ export function useCola(): UsoCola {
 
   useEventoSocket<{ pedido_id: number }>(socket, EventosServidor.PEDIDO_NUEVO, (payload) => {
     // Campana suave + parpadeo: la cocinera puede estar de espaldas a la tablet.
+    // Parpadean TODOS los platillos de la comanda nueva, aunque cada uno se
+    // vaya a avanzar por separado — es una sola señal, "llegó pedido nuevo".
     sonarCampana(gananciaDe(useVolumen.getState().nivel));
     setRecienLlegadas((previas) => new Set(previas).add(payload.pedido_id));
 
@@ -119,6 +123,7 @@ export function useCola(): UsoCola {
   });
 
   useEventoSocket(socket, EventosServidor.PEDIDO_ESTADO, refrescar);
+  useEventoSocket(socket, EventosServidor.LINEA_ESTADO, refrescar);
   useEventoSocket(socket, EventosServidor.CUENTA_ACTUALIZADA, refrescar);
   useEventoSocket(socket, EventosServidor.CUENTA_COBRADA, refrescar);
 
@@ -149,13 +154,13 @@ export function useCola(): UsoCola {
   // ── Cambiar de estado ─────────────────────────────────────────────────────
 
   const cambiar = useMutation({
-    mutationFn: ({ pedido_id, estado }: { pedido_id: number; estado: EstadoPedido }) =>
-      endpoints.pedidos.cambiarEstado(pedido_id, estado),
+    mutationFn: ({ linea_id, estado }: { linea_id: number; estado: EstadoLinea }) =>
+      endpoints.pedidos.cambiarEstadoLinea(linea_id, estado),
 
     // Optimista a propósito: la tarjeta se mueve en el toque. Si la respuesta
     // tardara, la cocinera pensaría que no registró y volvería a tocar — y ese
-    // segundo toque se llevaría la comanda dos estados adelante.
-    onMutate: async ({ pedido_id, estado }) => {
+    // segundo toque se llevaría el platillo dos estados adelante.
+    onMutate: async ({ linea_id, estado }) => {
       await cliente.cancelQueries({ queryKey: CLAVES_COCINA.cola });
       const previo = cliente.getQueryData<ColaCocina>(CLAVES_COCINA.cola);
 
@@ -163,14 +168,12 @@ export function useCola(): UsoCola {
         actual
           ? {
               ...actual,
-              comandas: actual.comandas.map((c) =>
-                c.pedido_id === pedido_id ? { ...c, estado } : c,
-              ),
+              lineas: actual.lineas.map((l) => (l.linea_id === linea_id ? { ...l, estado } : l)),
             }
           : actual,
       );
 
-      setEnVuelo((previas) => new Set(previas).add(pedido_id));
+      setEnVuelo((previas) => new Set(previas).add(linea_id));
       return { previo };
     },
 
@@ -180,10 +183,10 @@ export function useCola(): UsoCola {
       window.setTimeout(() => setError(null), 5_000);
     },
 
-    onSettled: (_datos, _fallo, { pedido_id }) => {
+    onSettled: (_datos, _fallo, { linea_id }) => {
       setEnVuelo((previas) => {
         const quedan = new Set(previas);
-        quedan.delete(pedido_id);
+        quedan.delete(linea_id);
         return quedan;
       });
       refrescar();
@@ -193,20 +196,21 @@ export function useCola(): UsoCola {
   const mutar = cambiar.mutate;
 
   const avanzar = useCallback(
-    (comanda: ComandaCocina) => {
-      const paso = AVANCE[comanda.estado];
+    (linea: LineaCocina) => {
+      const paso = AVANCE[linea.estado];
       if (!paso) return;
 
-      mutar({ pedido_id: comanda.pedido_id, estado: paso.siguiente });
+      mutar({ linea_id: linea.linea_id, estado: paso.siguiente });
 
       // DECISIÓN: se recuerda SOLO la última acción. Una pila de deshaceres
       // obligaría a leer y elegir; acá el botón siempre significa lo mismo —
       // "lo que acabo de tocar, no era".
       setDeshacer({
-        pedido_id: comanda.pedido_id,
-        nombre_cliente: comanda.nombre_cliente,
+        linea_id: linea.linea_id,
+        producto_nombre: linea.producto_nombre,
+        nombre_cliente: linea.nombre_cliente,
         palabra: paso.palabra,
-        estado_anterior: comanda.estado,
+        estado_anterior: linea.estado,
         vence_en: Date.now() + SEGUNDOS_DESHACER * 1_000,
       });
     },
@@ -215,7 +219,7 @@ export function useCola(): UsoCola {
 
   const ejecutarDeshacer = useCallback(() => {
     if (!deshacer) return;
-    mutar({ pedido_id: deshacer.pedido_id, estado: deshacer.estado_anterior });
+    mutar({ linea_id: deshacer.linea_id, estado: deshacer.estado_anterior });
     setDeshacer(null);
   }, [mutar, deshacer]);
 
@@ -227,7 +231,10 @@ export function useCola(): UsoCola {
   const desfase = cola.data ? Date.parse(cola.data.hora_servidor) - cola.dataUpdatedAt : 0;
 
   return {
-    comandas: ordenarCola(cola.data?.comandas ?? []),
+    // Se reaplica acá para que la actualización optimista de `cambiar` (que
+    // solo reemplaza el estado de UNA línea, sin tocar el orden del arreglo)
+    // no pierda el agrupado por platillo que ya trajo el servidor.
+    lineas: agruparPorPlatillo(ordenarCola(cola.data?.lineas ?? [])),
     umbrales: cola.data?.umbrales ?? { alerta: 10, urgente: 20 },
     ahora: Date.now() + desfase,
     conectado,

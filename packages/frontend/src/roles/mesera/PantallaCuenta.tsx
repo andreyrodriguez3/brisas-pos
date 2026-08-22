@@ -1,4 +1,4 @@
-import { EstadoPedido, formatearColones, type LineaCompleta } from '@brisas/shared';
+import { EstadoLinea, EstadoPedido, formatearColones, type LineaCompleta } from '@brisas/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { endpoints } from '../../shared/api/endpoints';
@@ -94,12 +94,7 @@ export function PantallaCuenta() {
               {pedido.lineas
                 .filter((l) => !l.anulada)
                 .map((linea) => (
-                  <FilaLinea
-                    key={linea.id}
-                    linea={linea}
-                    cuentaId={cuentaId}
-                    estadoPedido={pedido.estado as EstadoPedido}
-                  />
+                  <FilaLinea key={linea.id} linea={linea} cuentaId={cuentaId} />
                 ))}
             </ul>
 
@@ -153,17 +148,13 @@ function BotonEntregar({ pedidoId, cuentaId }: { pedidoId: number; cuentaId: num
   );
 }
 
-function FilaLinea({
-  linea,
-  cuentaId,
-  estadoPedido,
-}: {
-  linea: LineaCompleta;
-  cuentaId: number;
-  estadoPedido: EstadoPedido;
-}) {
+function FilaLinea({ linea, cuentaId }: { linea: LineaCompleta; cuentaId: number }) {
   const cliente = useQueryClient();
-  const puedeEditar = estadoPedido === EstadoPedido.ENVIADO;
+  // El gate mira el estado de ESTA línea, no el de la comanda: con cocina
+  // trabajando por platillo, un pedido puede tener un plato LISTO y otro
+  // todavía EN COLA al mismo tiempo.
+  const puedeEditar = linea.estado_linea === EstadoLinea.ENVIADO;
+  const estado = ESTADO[linea.estado_linea as EstadoPedido];
 
   const invalidar = () => {
     void cliente.invalidateQueries({ queryKey: CLAVES_MESERA.cuenta(cuentaId) });
@@ -193,10 +184,15 @@ function FilaLinea({
       <span className="w-8 shrink-0 font-bold tabular-nums">{linea.cantidad}×</span>
 
       <div className="min-w-0 flex-1">
-        <p className="font-medium">
+        <p className="flex flex-wrap items-center gap-1.5 font-medium">
           {linea.producto_nombre}
           {linea.variante_etiqueta !== 'Único' && (
             <span className="text-slate-500"> ({linea.variante_etiqueta})</span>
+          )}
+          {/* Solo cuando el plato ya avanzó: en ENVIADO (el caso común) sería
+              ruido, ya lo dice el encabezado de la comanda. */}
+          {linea.estado_linea !== EstadoLinea.ENVIADO && !linea.es_envase && (
+            <Insignia tono={estado.tono}>{estado.texto}</Insignia>
           )}
         </p>
         {linea.opciones.length > 0 && (

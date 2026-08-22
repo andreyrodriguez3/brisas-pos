@@ -29,6 +29,7 @@ import type {
   EditarLineaDto,
   EnviarPedidoDto,
   EstadoCobro,
+  EstadoLinea,
   EstadoPedido,
   FijarDivisionDto,
   GrupoOpcionAdmin,
@@ -124,8 +125,12 @@ export const endpoints = {
       api.patch<CuentaCompleta>(`/pedidos/lineas/${lineaId}`, dto),
     anularLinea: (lineaId: number, motivo: string) =>
       api.patch<CuentaCompleta>(`/pedidos/lineas/${lineaId}/anular`, { motivo }),
+    /** La comanda entera de una vez — la mesera recogiendo todo el pedido junto. */
     cambiarEstado: (pedidoId: number, estado: EstadoPedido) =>
       api.patch<unknown>(`/pedidos/${pedidoId}/estado`, { estado }),
+    /** Un solo platillo — lo que toca la tablet de cocina. */
+    cambiarEstadoLinea: (lineaId: number, estado: EstadoLinea) =>
+      api.patch<unknown>(`/pedidos/lineas/${lineaId}/estado`, { estado }),
   },
 
   /**
