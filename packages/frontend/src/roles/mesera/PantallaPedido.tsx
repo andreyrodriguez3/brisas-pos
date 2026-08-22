@@ -18,6 +18,14 @@ import { HojaOpciones } from './HojaOpciones';
 import { CLAVES_MESERA, useEnviarPedido } from './useEnviarPedido';
 import { aLineasDto, subtotalCarrito, totalItem, useCarrito } from './estado/carrito';
 
+/** Sin tildes y en minúsculas, para que "cafe" encuentre "Café". */
+function normalizar(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase();
+}
+
 /**
  * Tomar el pedido: categorías en pestañas, platillos en lista, carrito abajo con
  * el subtotal SIEMPRE visible.
@@ -35,6 +43,7 @@ export function PantallaPedido({ base = '/mesera' }: { base?: string } = {}) {
   const [categoriaActiva, setCategoriaActiva] = useState<number | null>(null);
   const [productoAbierto, setProductoAbierto] = useState<ProductoCompleto | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
+  const [busqueda, setBusqueda] = useState('');
 
   const { items, agregar, cambiarCantidad, vaciar, abrirPara } = useCarrito();
   const { enviar, enviando, error, limpiarError } = useEnviarPedido();
@@ -67,6 +76,18 @@ export function PantallaPedido({ base = '/mesera' }: { base?: string } = {}) {
   const categorias = menu.data ?? [];
   const categoria = categorias.find((c) => c.id === categoriaActiva) ?? categorias[0];
   const canal = (cuenta.data?.canal ?? 'SALON') as CanalCuenta;
+
+  const buscando = busqueda.trim().length > 0;
+  const terminoBuscado = normalizar(busqueda.trim());
+  const resultadosBusqueda = buscando
+    ? categorias
+        .flatMap((c) => c.productos.map((p) => ({ ...p, categoriaNombre: c.nombre })))
+        .filter((p) =>
+          [p.nombre_es, p.nombre_en, p.descripcion]
+            .filter((texto): texto is string => Boolean(texto))
+            .some((texto) => normalizar(texto).includes(terminoBuscado)),
+        )
+    : [];
 
   const subtotal = subtotalCarrito(items);
   // Se muestra el envase ANTES de mandar, con la misma regla que usa el
@@ -111,23 +132,53 @@ export function PantallaPedido({ base = '/mesera' }: { base?: string } = {}) {
         </button>
       </header>
 
-      {/* Pestañas horizontales de categorías. */}
-      <nav className="flex gap-2 overflow-x-auto border-b border-slate-200/70 bg-white px-4 py-2 shadow-sm">
-        {categorias.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => setCategoriaActiva(c.id)}
-            className={`min-h-12 shrink-0 rounded-full px-4 text-sm font-semibold ${
-              c.id === categoria?.id ? 'bg-marca text-white' : 'bg-slate-100 text-slate-600'
-            }`}
-          >
-            {c.nombre}
-          </button>
-        ))}
-      </nav>
+      {/* Buscador: mientras tiene texto, reemplaza las pestañas por una lista plana. */}
+      <div className="border-b border-slate-200/70 bg-white px-4 py-2 shadow-sm">
+        <div className="relative">
+          <input
+            type="text"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar platillo…"
+            className="min-h-tactil w-full rounded-full border border-slate-200/70 bg-slate-50 px-4 pr-10 text-sm"
+          />
+          {buscando && (
+            <button
+              aria-label="Limpiar búsqueda"
+              onClick={() => setBusqueda('')}
+              className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100"
+            >
+              ×
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Pestañas horizontales de categorías: ocultas mientras se busca. */}
+      {!buscando && (
+        <nav className="flex gap-2 overflow-x-auto border-b border-slate-200/70 bg-white px-4 py-2 shadow-sm">
+          {categorias.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => setCategoriaActiva(c.id)}
+              className={`min-h-12 shrink-0 rounded-full px-4 text-sm font-semibold ${
+                c.id === categoria?.id ? 'bg-marca text-white' : 'bg-slate-100 text-slate-600'
+              }`}
+            >
+              {c.nombre}
+            </button>
+          ))}
+        </nav>
+      )}
 
       <ul className="flex-1 divide-y divide-slate-100 overflow-y-auto bg-white">
-        {categoria?.productos.map((p) => (
+        {buscando && resultadosBusqueda.length === 0 && (
+          <li className="px-4 py-8 text-center text-slate-500">
+            Sin resultados para «{busqueda.trim()}»
+          </li>
+        )}
+
+        {(buscando ? resultadosBusqueda : (categoria?.productos ?? [])).map((p) => (
           <li key={p.id}>
             <button
               onClick={() => setProductoAbierto(p)}
@@ -135,6 +186,11 @@ export function PantallaPedido({ base = '/mesera' }: { base?: string } = {}) {
               className="flex min-h-tactil w-full items-center gap-3 px-4 py-4 text-left transition active:bg-slate-50 disabled:opacity-40"
             >
               <span className="min-w-0 flex-1">
+                {buscando && (
+                  <span className="block text-xs text-slate-400">
+                    {(p as { categoriaNombre?: string }).categoriaNombre}
+                  </span>
+                )}
                 <span className="flex items-center gap-2">
                   <span className="truncate font-medium leading-snug">{p.nombre_es}</span>
                   {p.agotado && <Insignia tono="aviso">Agotado</Insignia>}

@@ -263,10 +263,33 @@ export interface CuentaCompleta extends Cuenta {
 // ── Cocina ──────────────────────────────────────────────────────────────────
 // Lo que ve la tablet. Sin un solo precio: a la cocina no le sirven y ocupan el
 // lugar de lo que sí importa, que es el nombre del cliente y las notas.
+//
+// La unidad es el PLATILLO, no la comanda: cinco cocineras se reparten el
+// trabajo tomando cada una los platillos iguales, y cada uno avanza y se
+// entrega por su cuenta. `pedido_id`/`consecutivo_dia` se conservan porque
+// varias líneas de la misma comanda siguen siendo la misma mesa — la cocinera
+// necesita saber a dónde va cada plato aunque los prepare por separado.
 
-/** Una línea como la ve cocina. */
-export interface LineaComanda {
-  id: number;
+/** Un platillo como lo ve cocina: una línea de pedido, no la comanda entera. */
+export interface LineaCocina {
+  linea_id: number;
+  pedido_id: number;
+  cuenta_id: number;
+  /** El número de comanda del día al que pertenece este platillo. */
+  consecutivo_dia: number;
+  estado: EstadoLinea;
+  /** true = la comanda se suma a una cuenta que ya tenía pedidos. Banda naranja AGREGADO. */
+  es_agregado: boolean;
+  nombre_cliente: string;
+  referencia: string | null;
+  canal: CanalCuenta;
+  /** Solo en PARA_LLEVAR. Es lo que ordena la cola de esas comandas. */
+  hora_retiro: FechaISO | null;
+  /** Van juntos SIEMPRE: el color nunca es la única señal. */
+  mesera_nombre: string | null;
+  mesera_color: string | null;
+  /** Del pedido al que pertenece: una línea no tiene hora propia de creación. */
+  creado_en: FechaISO;
   cantidad: number;
   producto_nombre: string;
   /** null cuando el producto tiene una sola presentación: no aporta nada. */
@@ -277,28 +300,8 @@ export interface LineaComanda {
   nota: string | null;
 }
 
-export interface ComandaCocina {
-  pedido_id: number;
-  cuenta_id: number;
-  /** El número de comanda del día. */
-  consecutivo_dia: number;
-  estado: EstadoPedido;
-  /** true = se suma a una cuenta que ya tenía pedidos. Banda naranja AGREGADO. */
-  es_agregado: boolean;
-  nombre_cliente: string;
-  referencia: string | null;
-  canal: CanalCuenta;
-  /** Solo en PARA_LLEVAR. Es lo que ordena la cola de esas comandas. */
-  hora_retiro: FechaISO | null;
-  /** Van juntos SIEMPRE: el color nunca es la única señal. */
-  mesera_nombre: string | null;
-  mesera_color: string | null;
-  creado_en: FechaISO;
-  lineas: LineaComanda[];
-}
-
 export interface ColaCocina {
-  comandas: ComandaCocina[];
+  lineas: LineaCocina[];
   /** Del `configuracion`, no hardcodeados en la pantalla. */
   umbrales: { alerta: number; urgente: number };
   /**
@@ -393,6 +396,15 @@ export interface EstadoTurnoActual {
   /** Lo vendido hasta ahora, en las tres bolsas. */
   totalizadores: { salon: Colones; para_llevar: Colones; envases: Colones };
   puede_cerrar: boolean;
+  /**
+   * El turno abierto quedó de un día anterior — nadie cerró el día pasado y
+   * el sistema, sin frenar a nadie, lo siguió reusando. No es un error del
+   * sistema: es la reutilización automática documentada haciendo justo lo
+   * que dice que hace. Pero caja tiene que verlo para saber que le conviene
+   * cerrar el día ya, antes de que se sigan mezclando más ventas de hoy con
+   * las de ese turno viejo.
+   */
+  es_de_otro_dia: boolean;
 }
 
 /** Cuánto entró por cada forma de pago. Para cuadrar la caja física. */

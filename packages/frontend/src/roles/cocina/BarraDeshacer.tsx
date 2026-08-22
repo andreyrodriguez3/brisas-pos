@@ -38,7 +38,7 @@ export function BarraDeshacer({ accion, onDeshacer }: Props) {
     >
       <span>↶ Deshacer</span>
       <span className="truncate font-normal normal-case opacity-90">
-        {accion.nombre_cliente} · {accion.palabra}
+        {accion.producto_nombre} · {accion.nombre_cliente} · {accion.palabra}
       </span>
       <span className="ml-auto tabular-nums opacity-80">{segundos}s</span>
     </button>

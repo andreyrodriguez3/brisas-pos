@@ -2,6 +2,7 @@ import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { hash, verify } from '@node-rs/argon2';
+import type { StringValue } from 'ms';
 import { Rol, type LoginDto, type PayloadJwt, type Sesion } from '@brisas/shared';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -109,10 +110,17 @@ export class AuthService {
     return hash(pin);
   }
 
-  /** La mesera no debe loguearse cada rato; caja vive menos por estar fija. */
-  private vigencia(rol: Rol): string {
-    if (rol === Rol.MESERA) return this.config.get('JWT_EXPIRES_MESERA', '30d');
-    return this.config.get('JWT_EXPIRES_CAJA', '12h');
+  /**
+   * La mesera no debe loguearse cada rato; caja vive menos por estar fija.
+   *
+   * El valor sale de `.env` como string plano — no hay forma de que TypeScript
+   * verifique en tiempo de compilación que cumple el formato que espera `jwt`
+   * (`"30d"`, `"12h"`, etc.). Quien instala es responsable de no romper ese
+   * formato; documentado en `.env.example`.
+   */
+  private vigencia(rol: Rol): StringValue {
+    if (rol === Rol.MESERA) return this.config.get('JWT_EXPIRES_MESERA', '30d') as StringValue;
+    return this.config.get('JWT_EXPIRES_CAJA', '12h') as StringValue;
   }
 
   private async registrarFallo(usuarioId: number, fallosPrevios: number) {

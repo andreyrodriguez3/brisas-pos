@@ -16,6 +16,7 @@ import {
   SalaRealtime,
   type PayloadCuenta,
   type PayloadJwt,
+  type PayloadLineaEstado,
   type PayloadPedidoEstado,
   type PayloadPedidoNuevo,
   type PayloadUnirse,
@@ -116,6 +117,17 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
   /** Cambio de estado de una comanda. Va a las tres salas. */
   pedidoEstado(payload: PayloadPedidoEstado) {
     this.aTodos(EventosServidor.PEDIDO_ESTADO, payload);
+  }
+
+  /**
+   * Cambio de estado de UN platillo. Va a las tres salas igual que
+   * `pedidoEstado` — el filtro de "es para mí" (mesera responsable) lo hace
+   * cada celular con `mesera_responsable_id`, no el servidor: todas las
+   * meseras ya comparten la sala `meseras`, tal como comparten la edición
+   * cruzada de cuentas.
+   */
+  lineaEstado(payload: PayloadLineaEstado) {
+    this.aTodos(EventosServidor.LINEA_ESTADO, payload);
   }
 
   cuentaAbierta(payload: PayloadCuenta) {

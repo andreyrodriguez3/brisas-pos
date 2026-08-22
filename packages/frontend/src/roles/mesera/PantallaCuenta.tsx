@@ -1,4 +1,4 @@
-import { EstadoPedido, formatearColones, type LineaCompleta } from '@brisas/shared';
+import { EstadoLinea, EstadoPedido, formatearColones, type LineaCompleta } from '@brisas/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { endpoints } from '../../shared/api/endpoints';
@@ -150,13 +150,33 @@ function BotonEntregar({ pedidoId, cuentaId }: { pedidoId: number; cuentaId: num
 
 function FilaLinea({ linea, cuentaId }: { linea: LineaCompleta; cuentaId: number }) {
   const cliente = useQueryClient();
+  // El gate mira el estado de ESTA línea, no el de la comanda: con cocina
+  // trabajando por platillo, un pedido puede tener un plato LISTO y otro
+  // todavía EN COLA al mismo tiempo.
+  const puedeEditar = linea.estado_linea === EstadoLinea.ENVIADO;
+  const estado = ESTADO[linea.estado_linea as EstadoPedido];
+
+  const invalidar = () => {
+    void cliente.invalidateQueries({ queryKey: CLAVES_MESERA.cuenta(cuentaId) });
+    void cliente.invalidateQueries({ queryKey: CLAVES_MESERA.cuentas });
+  };
 
   const marcar = useMutation({
     mutationFn: (para_llevar: boolean) => endpoints.pedidos.editarLinea(linea.id, { para_llevar }),
-    onSuccess: () => {
-      void cliente.invalidateQueries({ queryKey: CLAVES_MESERA.cuenta(cuentaId) });
-      void cliente.invalidateQueries({ queryKey: CLAVES_MESERA.cuentas });
-    },
+    onSuccess: invalidar,
+  });
+
+  const cambiarCantidad = useMutation({
+    mutationFn: (cantidad: number) => endpoints.pedidos.editarLinea(linea.id, { cantidad }),
+    onSuccess: invalidar,
+  });
+
+  // Sin motivo: es una acción frecuente y automática, como el ajuste de
+  // envases. Pedirle motivo a la mesera acá sería fricción innecesaria.
+  const quitar = useMutation({
+    mutationFn: () =>
+      endpoints.pedidos.anularLinea(linea.id, 'Quitada por la mesera antes de que cocina la preparara'),
+    onSuccess: invalidar,
   });
 
   return (
@@ -164,10 +184,15 @@ function FilaLinea({ linea, cuentaId }: { linea: LineaCompleta; cuentaId: number
       <span className="w-8 shrink-0 font-bold tabular-nums">{linea.cantidad}×</span>
 
       <div className="min-w-0 flex-1">
-        <p className="font-medium">
+        <p className="flex flex-wrap items-center gap-1.5 font-medium">
           {linea.producto_nombre}
           {linea.variante_etiqueta !== 'Único' && (
             <span className="text-slate-500"> ({linea.variante_etiqueta})</span>
+          )}
+          {/* Solo cuando el plato ya avanzó: en ENVIADO (el caso común) sería
+              ruido, ya lo dice el encabezado de la comanda. */}
+          {linea.estado_linea !== EstadoLinea.ENVIADO && !linea.es_envase && (
+            <Insignia tono={estado.tono}>{estado.texto}</Insignia>
           )}
         </p>
         {linea.opciones.length > 0 && (
@@ -191,8 +216,48 @@ function FilaLinea({ linea, cuentaId }: { linea: LineaCompleta; cuentaId: number
             {linea.para_llevar ? '✓ SE LO LLEVA · con envase' : 'Marcar que se lo lleva'}
           </button>
         )}
+
+        {/* Cocina todavía no la empezó: se puede cambiar la cantidad o quitarla.
+            En cuanto pasa a EN_PREPARACION, la línea queda de solo lectura. */}
+        {puedeEditar && (
+          <div className="mt-2 flex items-center gap-2">
+            <button
+              aria-label="Menos"
+              disabled={cambiarCantidad.isPending || linea.cantidad <= 1}
+              onClick={() => cambiarCantidad.mutate(linea.cantidad - 1)}
+              className="h-8 w-8 shrink-0 rounded-lg bg-slate-100 text-base font-bold disabled:opacity-40"
+            >
+              −
+            </button>
+            <span className="w-5 text-center text-sm font-bold tabular-nums">
+              {linea.cantidad}
+            </span>
+            <button
+              aria-label="Más"
+              disabled={cambiarCantidad.isPending}
+              onClick={() => cambiarCantidad.mutate(linea.cantidad + 1)}
+              className="h-8 w-8 shrink-0 rounded-lg bg-slate-100 text-base font-bold disabled:opacity-40"
+            >
+              +
+            </button>
+            <button
+              disabled={quitar.isPending}
+              onClick={() => quitar.mutate()}
+              className="rounded-md px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
+            >
+              {quitar.isPending ? 'Quitando…' : 'Quitar'}
+            </button>
+          </div>
+        )}
+
         {marcar.isError && (
           <p className="mt-1 text-xs text-red-700">{mensajeDeError(marcar.error)}</p>
+        )}
+        {cambiarCantidad.isError && (
+          <p className="mt-1 text-xs text-red-700">{mensajeDeError(cambiarCantidad.error)}</p>
+        )}
+        {quitar.isError && (
+          <p className="mt-1 text-xs text-red-700">{mensajeDeError(quitar.error)}</p>
         )}
       </div>
 

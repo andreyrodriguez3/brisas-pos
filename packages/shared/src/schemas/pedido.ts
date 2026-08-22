@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { EstadoPedido } from '../types/enums';
+import { EstadoLinea, EstadoPedido } from '../types/enums';
 import { zCantidad, zId, zNota } from './comunes';
 
 export const lineaNuevaSchema = z.object({
@@ -38,6 +38,12 @@ export const cambiarEstadoPedidoSchema = z.object({
   estado: z.nativeEnum(EstadoPedido),
 });
 export type CambiarEstadoPedidoDto = z.infer<typeof cambiarEstadoPedidoSchema>;
+
+/** Cocina avanza (o retrocede, para el DESHACER) un platillo, no la comanda entera. */
+export const cambiarEstadoLineaSchema = z.object({
+  estado: z.nativeEnum(EstadoLinea),
+});
+export type CambiarEstadoLineaDto = z.infer<typeof cambiarEstadoLineaSchema>;
 
 export const editarLineaSchema = z.object({
   cantidad: zCantidad.optional(),

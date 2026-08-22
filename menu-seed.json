@@ -4,14 +4,14 @@
     "moneda": "CRC",
     "fuente": "menu brisas m.pdf (menú oficial, 6 páginas) + foto 'Fresas con crema' (Las Brisos) + foto 'Carta de tragos' (Brisas del Monte Bar)",
     "fecha_transcripcion": "2026-08-17",
-    "estado": "Confirmado en casi todos los precios de comida: el PDF oficial coincide exactamente con la transcripción anterior de Google Maps. Siguen pendientes: qué distingue cada precio en los 18 productos de rango, los precios de refrescos/cervezas/vinos, y si Salchipapas se vende a adultos.",
+    "estado": "Menú confirmado por completo: los 120 productos tienen precio, y la dueña confirmó las tres últimas dudas abiertas (etiquetas Pequeño/Grande, agua/leche en batidos, Salchipapas para adultos). Sin preguntas pendientes de precio.",
     "notas_criticas": [
       "El PDF oficial confirma, sin cambios, los precios de Platos fuertes, Arroces, Bocas (salvo una excepción, ver abajo), Comidas rápidas, Fuentes, Kids, Extras y Bebidas calientes tal como ya estaban transcritos de las fotos de Google Maps.",
       "Dos productos de la transcripción anterior NO aparecen en el PDF oficial y se sacan del menú: 'Arroz con camarones' (boca) y 'Batido de chocolate'. Si en algún momento se confirma que siguen vendiéndose, hay que agregarlos de nuevo.",
-      "Hay 18 productos con rango de precio del tipo '3500-4500'. Se modelan como DOS VARIANTES del mismo producto. Las etiquetas ('Pequeño'/'Grande') son una SUPOSICIÓN — el PDF oficial tampoco aclara qué distingue cada precio (tamaño, media/entera, con o sin carne). Sigue pendiente confirmar con la dueña.",
+      "CONFIRMADO por la dueña (ago 2026): en los 18 productos con rango de precio, 'Pequeño'/'Grande' es tamaño — las etiquetas ya no son una suposición.",
       "Los platillos que dicen 'con papas o yuca' se modelaron con un grupo de opción obligatorio de selección única, sin costo extra.",
       "CONFIRMADO por la dueña por WhatsApp (17 ago 2026): precios completos de cervezas, vinos y refrescos embotellados. Cervezas nacionales (Imperial, Imperial Light, Imperial Silver, Pilsen) ₡1500. Cervezas premium (Bavaria Gold/Light/Máster/Sol, Corona, Heineken, Heineken 0) + bebidas en lata (Michelada Imperial, Adán y Eva de frutos rojos) + Vaso michelado, todas ₡2000. Vinos (Riunite, blanco, tinto) ₡3500 parejo. Jugo de tomate ₡800. Tropical (blanco/melocotón/frutas) y Gaseosa ₡1000. Cerveza Rock Ice ₡2000 (confirmada aparte, no vino en la lista original).",
-      "'Salchipapas' sigue sin aparecer en la sección de Comidas rápidas del menú oficial — solo en el menú infantil (₡3500). Sigue desactivada para adultos hasta confirmar con la dueña.",
+      "CONFIRMADO por la dueña (ago 2026): 'Salchipapas' se sigue vendiendo a adultos a ₡3000, aunque no aparezca en la sección de Comidas rápidas del PDF oficial (que sí trae la versión infantil a ₡3500).",
       "CONFIRMADO por la dueña (ago 2026): los precios del menú YA INCLUYEN el IVA 13% y el 10% de servicio. El sistema NO calcula impuestos: el total es la suma simple de las líneas. Ver clave de configuración PRECIOS_INCLUYEN_IMPUESTOS = true.",
       "CONFIRMADO por la dueña (ago 2026): el envase plástico se cobra a ₡200 por unidad, precio único.",
       "NUEVO: sección 'Fresas con crema' (foto de la marca 'Las Brisos'). Cada producto ya trae su salsa fija en el nombre (crema, condensada o chocolate); el 'Topping extra' (₡500) es un agregado opcional de chispas de colores o malvaviscos, modelado como grupo de opción no obligatorio.",
@@ -24,7 +24,7 @@
       "nombre": "Acompañamiento",
       "obligatorio": true,
       "min": 1,
-      "max": 1,
+      "max": 2,
       "opciones": [
         {
           "nombre": "Papas",
@@ -41,7 +41,7 @@
       "nombre": "Acompañamiento",
       "obligatorio": true,
       "min": 1,
-      "max": 1,
+      "max": 3,
       "opciones": [
         {
           "nombre": "Papas",
@@ -76,8 +76,7 @@
               "etiqueta": "Grande",
               "precio": 4500
             }
-          ],
-          "variantes_por_confirmar": true
+          ]
         },
         {
           "nombre_es": "Chicharrón",
@@ -121,8 +120,7 @@
               "etiqueta": "Grande",
               "precio": 5000
             }
-          ],
-          "variantes_por_confirmar": true
+          ]
         },
         {
           "nombre_es": "Taquito de queso",
@@ -172,8 +170,7 @@
               "etiqueta": "Grande",
               "precio": 3500
             }
-          ],
-          "variantes_por_confirmar": true
+          ]
         },
         {
           "nombre_es": "Nachos",
@@ -187,8 +184,7 @@
               "etiqueta": "Grande",
               "precio": 5000
             }
-          ],
-          "variantes_por_confirmar": true
+          ]
         },
         {
           "nombre_es": "Taquito al monte",
@@ -202,8 +198,7 @@
               "etiqueta": "Grande",
               "precio": 3500
             }
-          ],
-          "variantes_por_confirmar": true
+          ]
         },
         {
           "nombre_es": "Chifrijo (boca)",
@@ -227,8 +222,7 @@
               "etiqueta": "Grande",
               "precio": 4000
             }
-          ],
-          "variantes_por_confirmar": true
+          ]
         },
         {
           "nombre_es": "Chalupas",
@@ -242,8 +236,7 @@
               "etiqueta": "Grande",
               "precio": 4000
             }
-          ],
-          "variantes_por_confirmar": true
+          ]
         },
         {
           "nombre_es": "Papinachos",
@@ -257,8 +250,7 @@
               "etiqueta": "Grande",
               "precio": 5000
             }
-          ],
-          "variantes_por_confirmar": true
+          ]
         }
       ]
     },
@@ -308,8 +300,7 @@
           ],
           "grupos_opcion": [
             "ACOMP_PAPAS_YUCA"
-          ],
-          "variantes_por_confirmar": true
+          ]
         },
         {
           "nombre_es": "Camarón empanizado",
@@ -365,8 +356,7 @@
           ],
           "grupos_opcion": [
             "ACOMP_PAPAS_YUCA"
-          ],
-          "variantes_por_confirmar": true
+          ]
         },
         {
           "nombre_es": "Plato de chicharrón",
@@ -383,8 +373,7 @@
           ],
           "grupos_opcion": [
             "ACOMP_PAPAS_YUCA"
-          ],
-          "variantes_por_confirmar": true
+          ]
         },
         {
           "nombre_es": "Surtida",
@@ -399,8 +388,7 @@
               "etiqueta": "Grande",
               "precio": 12000
             }
-          ],
-          "variantes_por_confirmar": true
+          ]
         },
         {
           "nombre_es": "Pescado entero",
@@ -427,8 +415,7 @@
               "etiqueta": "Grande",
               "precio": 4300
             }
-          ],
-          "variantes_por_confirmar": true
+          ]
         },
         {
           "nombre_es": "Sopa azteca",
@@ -559,8 +546,7 @@
               "etiqueta": "Grande",
               "precio": 4500
             }
-          ],
-          "variantes_por_confirmar": true
+          ]
         },
         {
           "nombre_es": "Hamburguesa",
@@ -574,8 +560,7 @@
               "etiqueta": "Grande",
               "precio": 4000
             }
-          ],
-          "variantes_por_confirmar": true
+          ]
         },
         {
           "nombre_es": "Chorreadas",
@@ -626,8 +611,7 @@
               "precio": 3000
             }
           ],
-          "activo": false,
-          "nota": "Aparece en el menú infantil nuevo a ₡3500, pero sigue sin aparecer en la sección de comidas rápidas para adultos. CONFIRMAR si se sigue vendiendo para adultos y a qué precio."
+          "nota": "Confirmado por la dueña (ago 2026): se sigue vendiendo a adultos a ₡3000, aunque no aparezca en la sección de comidas rápidas del PDF oficial."
         }
       ]
     },
@@ -686,8 +670,7 @@
               "etiqueta": "Grande",
               "precio": 3500
             }
-          ],
-          "variantes_por_confirmar": true
+          ]
         },
         {
           "nombre_es": "Hamburguesa (kids)",
@@ -705,8 +688,7 @@
           ],
           "grupos_opcion": [
             "KIDS_TORTA"
-          ],
-          "variantes_por_confirmar": true
+          ]
         },
         {
           "nombre_es": "Fajitas de pollo (kids)",
@@ -753,8 +735,7 @@
           ],
           "grupos_opcion": [
             "ACOMP_PAPAS_YUCA"
-          ],
-          "variantes_por_confirmar": true
+          ]
         }
       ]
     },
@@ -839,7 +820,7 @@
       "codigo": "BATIDOS",
       "nombre": "Batidos",
       "orden": 8,
-      "nota": "Todos a ₡1300 y ₡1800. En la foto y en el PDF oficial aparece como '1300 / 1800'. Se asume 1300 = en agua y 1800 = en leche, modelado como dos variantes para que el precio quede explícito. CONFIRMAR con la dueña.",
+      "nota": "Confirmado por la dueña (ago 2026): ₡1300 = en agua, ₡1800 = en leche.",
       "productos": [
         {
           "nombre_es": "Batido de crema",
