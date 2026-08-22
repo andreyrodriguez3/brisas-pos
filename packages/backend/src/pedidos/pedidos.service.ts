@@ -2,15 +2,18 @@ import { BadRequestException, Injectable, Logger, NotFoundException } from '@nes
 import {
   AccionAuditoria,
   EstadoCuenta,
+  EstadoLinea,
   EstadoPedido,
+  agruparPorPlatillo,
   calcularTotalLinea,
   envasesNecesarios,
+  estadoMenosAvanzado,
   ordenarCola,
   type CanalCuenta as TipoCanal,
   type ColaCocina,
-  type ComandaCocina,
   type EditarLineaDto,
   type EnviarPedidoDto,
+  type LineaCocina,
   type LineaNuevaDto,
 } from '@brisas/shared';
 import type { Prisma } from '@prisma/client';
@@ -191,83 +194,86 @@ export class PedidosService {
   /**
    * Todo lo que la tablet de cocina tiene que mostrar, en una sola llamada.
    *
-   * Van las comandas del día que todavía están en juego: ENVIADO, EN_PREPARACION
-   * y LISTO. Las ENTREGADO salen de la pantalla — ya no hay nada que hacer con
-   * ellas y solo estorbarían. Las de cuentas anuladas tampoco aparecen: esa
-   * comida no se cocina.
+   * La unidad es el PLATILLO (una línea), no la comanda: con varias cocineras
+   * repartiéndose el trabajo, cada una toma los platillos iguales y los avanza
+   * por su cuenta, sin esperar a que el resto de la comanda esté listo.
+   *
+   * Van los platillos del día que todavía están en juego: ENVIADO,
+   * EN_PREPARACION y LISTO. Los ENTREGADO salen de la pantalla — ya no hay nada
+   * que hacer con ellos y solo estorbarían. Los de cuentas anuladas tampoco
+   * aparecen: esa comida no se cocina. El envase tampoco: es empaque, no se
+   * cocina, y mostrarlo como si fuera un platillo más le robaría espacio a la
+   * comida de verdad — el cargo ya está en la cuenta y lo ve caja.
    *
    * No devuelve ni un precio. A la cocina no le sirven y ocuparían el lugar de
    * lo que sí importa.
    */
   async colaCocina(): Promise<ColaCocina> {
-    const pedidos = await this.prisma.pedido.findMany({
+    const lineas = await this.prisma.pedidoLinea.findMany({
       where: {
-        dia: diaLocal(),
-        estado: { in: [EstadoPedido.ENVIADO, EstadoPedido.EN_PREPARACION, EstadoPedido.LISTO] },
-        cuenta: { estado: { not: EstadoCuenta.ANULADA } },
+        anulada: false,
+        estado_linea: { in: [EstadoLinea.ENVIADO, EstadoLinea.EN_PREPARACION, EstadoLinea.LISTO] },
+        producto: { es_envase: false },
+        pedido: {
+          dia: diaLocal(),
+          cuenta: { estado: { not: EstadoCuenta.ANULADA } },
+        },
       },
+      orderBy: { id: 'asc' },
       include: {
-        cuenta: {
+        opciones: { select: { nombre_snapshot: true } },
+        producto: { select: { nombre_es: true } },
+        variante: { select: { etiqueta: true } },
+        pedido: {
           select: {
             id: true,
-            nombre_cliente: true,
-            referencia: true,
-            canal: true,
-            hora_retiro: true,
-            mesera_responsable: { select: { nombre: true, color_hex: true } },
-          },
-        },
-        lineas: {
-          where: {
-            anulada: false,
-            // El envase no se cocina: es empaque. Mostrarlo como si fuera un
-            // platillo más confundiría a la cocinera y le robaría espacio a la
-            // comida de verdad. El cargo ya está en la cuenta; caja lo ve.
-            producto: { es_envase: false },
-          },
-          orderBy: { id: 'asc' },
-          include: {
-            opciones: { select: { nombre_snapshot: true } },
-            producto: { select: { nombre_es: true } },
-            variante: { select: { etiqueta: true } },
+            consecutivo_dia: true,
+            es_agregado: true,
+            creado_en: true,
+            cuenta: {
+              select: {
+                id: true,
+                nombre_cliente: true,
+                referencia: true,
+                canal: true,
+                hora_retiro: true,
+                mesera_responsable: { select: { nombre: true, color_hex: true } },
+              },
+            },
           },
         },
       },
     });
 
-    const comandas: ComandaCocina[] = pedidos
-      // Una comanda cuyas líneas se anularon todas no tiene nada que preparar.
-      .filter((p) => p.lineas.length > 0)
-      .map((p) => ({
-        pedido_id: p.id,
-        cuenta_id: p.cuenta.id,
-        consecutivo_dia: p.consecutivo_dia,
-        estado: p.estado as EstadoPedido,
-        es_agregado: p.es_agregado,
-        nombre_cliente: p.cuenta.nombre_cliente,
-        referencia: p.cuenta.referencia,
-        canal: p.cuenta.canal as TipoCanal,
-        hora_retiro: p.cuenta.hora_retiro?.toISOString() ?? null,
-        mesera_nombre: p.cuenta.mesera_responsable?.nombre ?? null,
-        mesera_color: p.cuenta.mesera_responsable?.color_hex ?? null,
-        creado_en: p.creado_en.toISOString(),
-        lineas: p.lineas.map((l) => ({
-          id: l.id,
-          cantidad: l.cantidad,
-          producto_nombre: l.producto.nombre_es,
-          // "Único" es la variante de relleno de los productos de un solo
-          // precio: escribirla en la tarjeta sería ruido.
-          variante_etiqueta: l.variante.etiqueta === 'Único' ? null : l.variante.etiqueta,
-          opciones: l.opciones.map((o) => o.nombre_snapshot),
-          nota: l.nota,
-        })),
-      }));
+    const platillos: LineaCocina[] = lineas.map((l) => ({
+      linea_id: l.id,
+      pedido_id: l.pedido.id,
+      cuenta_id: l.pedido.cuenta.id,
+      consecutivo_dia: l.pedido.consecutivo_dia,
+      estado: l.estado_linea as EstadoLinea,
+      es_agregado: l.pedido.es_agregado,
+      nombre_cliente: l.pedido.cuenta.nombre_cliente,
+      referencia: l.pedido.cuenta.referencia,
+      canal: l.pedido.cuenta.canal as TipoCanal,
+      hora_retiro: l.pedido.cuenta.hora_retiro?.toISOString() ?? null,
+      mesera_nombre: l.pedido.cuenta.mesera_responsable?.nombre ?? null,
+      mesera_color: l.pedido.cuenta.mesera_responsable?.color_hex ?? null,
+      creado_en: l.pedido.creado_en.toISOString(),
+      cantidad: l.cantidad,
+      producto_nombre: l.producto.nombre_es,
+      // "Único" es la variante de relleno de los productos de un solo
+      // precio: escribirla en la tarjeta sería ruido.
+      variante_etiqueta: l.variante.etiqueta === 'Único' ? null : l.variante.etiqueta,
+      opciones: l.opciones.map((o) => o.nombre_snapshot),
+      nota: l.nota,
+    }));
 
     return {
       // El orden lo decide `shared`: salón por hora de entrada, para llevar por
-      // hora de retiro. La pantalla lo vuelve a aplicar, pero que el servidor ya
-      // los mande ordenados evita que un cliente distinto invente otro criterio.
-      comandas: ordenarCola(comandas),
+      // hora de retiro, agregados primero — y platillos iguales agrupados para
+      // que una cocinera los prepare de una. El servidor ya los manda así para
+      // que ningún cliente invente otro criterio.
+      lineas: agruparPorPlatillo(ordenarCola(platillos)),
       umbrales: await this.config.umbralesCocina(),
       // INVARIANTE 6: el reloj lo pone el servidor. La tablet mide el
       // temporizador contra esta hora, no contra la suya.
@@ -287,7 +293,7 @@ export class PedidosService {
     const cuentaId = await this.prisma.$transaction(async (tx) => {
       const antes = await tx.pedidoLinea.findUnique({
         where: { id: lineaId },
-        include: { opciones: true, pedido: { select: { cuenta_id: true, estado: true } } },
+        include: { opciones: true, pedido: { select: { cuenta_id: true } } },
       });
       if (!antes) throw new NotFoundException('No existe esa línea');
       if (antes.anulada) throw new BadRequestException('Esa línea está anulada');
@@ -295,10 +301,12 @@ export class PedidosService {
       await this.exigirCuentaAbierta(tx, antes.pedido.cuenta_id);
 
       // ⚠️ `para_llevar` queda afuera a propósito: se marca después de comer,
-      // no antes, y tiene que poder cambiarse en cualquier estado de la comanda.
+      // no antes, y tiene que poder cambiarse en cualquier estado del platillo.
+      // El bloqueo mira el estado de ESTA línea, no el de la comanda: con
+      // varias cocineras cada platillo avanza por su cuenta.
       const tocaAlgoMasQueParaLlevar =
         dto.cantidad !== undefined || dto.opciones_ids !== undefined || dto.nota !== undefined;
-      if (tocaAlgoMasQueParaLlevar && antes.pedido.estado !== EstadoPedido.ENVIADO) {
+      if (tocaAlgoMasQueParaLlevar && antes.estado_linea !== EstadoLinea.ENVIADO) {
         throw new BadRequestException(
           'Ya está en preparación: no se puede editar, solo marcar que se lo lleva.',
         );
@@ -359,13 +367,13 @@ export class PedidosService {
     const cuentaId = await this.prisma.$transaction(async (tx) => {
       const antes = await tx.pedidoLinea.findUnique({
         where: { id: lineaId },
-        include: { pedido: { select: { cuenta_id: true, estado: true } } },
+        include: { pedido: { select: { cuenta_id: true } } },
       });
       if (!antes) throw new NotFoundException('No existe esa línea');
 
       await this.exigirCuentaAbierta(tx, antes.pedido.cuenta_id);
 
-      if (antes.pedido.estado !== EstadoPedido.ENVIADO) {
+      if (antes.estado_linea !== EstadoLinea.ENVIADO) {
         throw new BadRequestException('Ya está en preparación: no se puede quitar.');
       }
 
@@ -452,7 +460,109 @@ export class PedidosService {
     return pedido;
   }
 
+  /**
+   * Avanza (o retrocede) UN platillo — no la comanda entera.
+   *
+   * Es lo que toca la tablet de cocina ahora: con varias cocineras, cada una
+   * avanza los platillos que preparó, y la comanda como tal ya no es una
+   * unidad de trabajo. El estado del PEDIDO queda como un resumen — el menos
+   * avanzado de sus líneas — para que `cobro` y la ficha de mesera lo sigan
+   * leyendo sin enterarse de este cambio.
+   *
+   * Mismo espíritu que `cambiarEstado`: acepta ir hacia atrás para el
+   * DESHACER de 30 segundos, sin diálogo de confirmación.
+   */
+  async cambiarEstadoLinea(
+    lineaId: number,
+    estado: EstadoLinea,
+    usuarioId: number,
+    porNombre: string,
+  ) {
+    const resultado = await this.prisma.$transaction(async (tx) => {
+      const antes = await tx.pedidoLinea.findUnique({
+        where: { id: lineaId },
+        include: {
+          producto: { select: { nombre_es: true } },
+          variante: { select: { etiqueta: true } },
+          pedido: {
+            select: {
+              id: true,
+              cuenta_id: true,
+              cuenta: {
+                select: {
+                  estado: true,
+                  nombre_cliente: true,
+                  referencia: true,
+                  mesera_responsable_id: true,
+                },
+              },
+            },
+          },
+        },
+      });
+      if (!antes) throw new NotFoundException('No existe ese platillo');
+      if (antes.anulada) throw new BadRequestException('Ese platillo está anulado');
+      if (antes.pedido.cuenta.estado === EstadoCuenta.ANULADA) {
+        throw new BadRequestException('Esa cuenta se anuló: no hay nada que preparar');
+      }
+
+      const despues = await tx.pedidoLinea.update({
+        where: { id: lineaId },
+        data: { estado_linea: estado },
+      });
+
+      await this.recomputarEstadoPedido(tx, antes.pedido.id);
+
+      await this.auditoria.registrar(
+        {
+          usuario_id: usuarioId,
+          accion: AccionAuditoria.LINEA_CAMBIAR_ESTADO,
+          cuenta_id: antes.pedido.cuenta_id,
+          pedido_id: antes.pedido.id,
+          linea_id: lineaId,
+          antes: { estado_linea: antes.estado_linea },
+          despues: { estado_linea: estado },
+        },
+        tx,
+      );
+
+      return { despues, antes };
+    });
+
+    this.realtime.lineaEstado({
+      linea_id: lineaId,
+      pedido_id: resultado.antes.pedido.id,
+      cuenta_id: resultado.antes.pedido.cuenta_id,
+      estado,
+      por: porNombre,
+      producto_nombre: resultado.antes.producto.nombre_es,
+      variante_etiqueta:
+        resultado.antes.variante.etiqueta === 'Único' ? null : resultado.antes.variante.etiqueta,
+      nombre_cliente: resultado.antes.pedido.cuenta.nombre_cliente,
+      referencia: resultado.antes.pedido.cuenta.referencia,
+      mesera_responsable_id: resultado.antes.pedido.cuenta.mesera_responsable_id,
+    });
+    this.realtime.cuentaActualizada({ cuenta_id: resultado.antes.pedido.cuenta_id });
+    return resultado.despues;
+  }
+
   // ── Internos ──────────────────────────────────────────────────────────────
+
+  /**
+   * El estado del PEDIDO es el menos avanzado de sus líneas no anuladas —
+   * misma regla que usa `cuentas.service` para resumir varios pedidos en el
+   * estado de la cuenta. Se recalcula acá cada vez que una línea cambia, para
+   * que `cobro` y la ficha de mesera puedan seguir leyendo `pedido.estado`
+   * sin saber que por dentro ahora se decide platillo por platillo.
+   */
+  private async recomputarEstadoPedido(tx: Prisma.TransactionClient, pedidoId: number) {
+    const lineas = await tx.pedidoLinea.findMany({
+      where: { pedido_id: pedidoId, anulada: false },
+      select: { estado_linea: true },
+    });
+    const nuevo = estadoMenosAvanzado(lineas.map((l) => l.estado_linea as EstadoLinea));
+    if (nuevo) await tx.pedido.update({ where: { id: pedidoId }, data: { estado: nuevo } });
+  }
 
   /**
    * Valida cada línea contra el menú y le congela los precios.

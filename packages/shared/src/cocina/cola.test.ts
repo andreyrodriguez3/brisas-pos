@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  agruparPorPlatillo,
+  estadoMenosAvanzado,
   minutosDeEspera,
   minutosParaRetiro,
   momentoDeReferencia,
@@ -143,6 +145,75 @@ describe('urgenciaDeComanda — salón: cuánto lleva esperando', () => {
   it('respeta los umbrales de configuración', () => {
     expect(urgenciaDeComanda(comanda, T('12:06'), { alerta: 5, urgente: 12 })).toBe('alerta');
     expect(urgenciaDeComanda(comanda, T('12:13'), { alerta: 5, urgente: 12 })).toBe('urgente');
+  });
+});
+
+describe('agruparPorPlatillo', () => {
+  const p = (nombre: string, etiqueta: string | null = null) => ({
+    producto_nombre: nombre,
+    variante_etiqueta: etiqueta,
+  });
+
+  it('junta platillos iguales, conservando la posición del primero que apareció', () => {
+    const orden = [p('Casado'), p('Arroz con camarón'), p('Casado'), p('Arroz con camarón')];
+    const agrupado = agruparPorPlatillo(orden);
+    expect(agrupado).toEqual([
+      p('Casado'),
+      p('Casado'),
+      p('Arroz con camarón'),
+      p('Arroz con camarón'),
+    ]);
+  });
+
+  it('un platillo con variantes distintas NO se junta con otras presentaciones', () => {
+    const orden = [p('Cordon Bleu', 'Pequeño'), p('Cordon Bleu', 'Grande'), p('Cordon Bleu', 'Pequeño')];
+    const agrupado = agruparPorPlatillo(orden);
+    expect(agrupado).toEqual([
+      p('Cordon Bleu', 'Pequeño'),
+      p('Cordon Bleu', 'Pequeño'),
+      p('Cordon Bleu', 'Grande'),
+    ]);
+  });
+
+  it('no reordena entre grupos: el grupo va donde apareció su primer integrante', () => {
+    // "Casado" apareció primero (índice 0), "Chifrijo" después (índice 1):
+    // el grupo de Casado tiene que seguir yendo antes que el de Chifrijo,
+    // aunque Chifrijo tenga más unidades.
+    const orden = [p('Casado'), p('Chifrijo'), p('Chifrijo'), p('Chifrijo')];
+    const agrupado = agruparPorPlatillo(orden);
+    expect(agrupado.map((x) => x.producto_nombre)).toEqual([
+      'Casado',
+      'Chifrijo',
+      'Chifrijo',
+      'Chifrijo',
+    ]);
+  });
+
+  it('una lista vacía no explota', () => {
+    expect(agruparPorPlatillo([])).toEqual([]);
+  });
+});
+
+describe('estadoMenosAvanzado', () => {
+  it('devuelve el único estado cuando hay uno solo', () => {
+    expect(estadoMenosAvanzado(['LISTO'])).toBe('LISTO');
+  });
+
+  it('el pedido sigue EN_PREPARACION si una línea ya está LISTA y otra no', () => {
+    expect(estadoMenosAvanzado(['LISTO', 'EN_PREPARACION'])).toBe('EN_PREPARACION');
+  });
+
+  it('el pedido está ENTREGADO solo cuando TODAS sus líneas lo están', () => {
+    expect(estadoMenosAvanzado(['ENTREGADO', 'ENTREGADO'])).toBe('ENTREGADO');
+    expect(estadoMenosAvanzado(['ENTREGADO', 'LISTO'])).toBe('LISTO');
+  });
+
+  it('el orden de la lista no importa: siempre gana el menos avanzado', () => {
+    expect(estadoMenosAvanzado(['ENTREGADO', 'ENVIADO', 'LISTO'])).toBe('ENVIADO');
+  });
+
+  it('una lista vacía devuelve null: no hay nada de qué hablar', () => {
+    expect(estadoMenosAvanzado([])).toBeNull();
   });
 });
 

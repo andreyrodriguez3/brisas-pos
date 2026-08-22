@@ -4,6 +4,7 @@ import {
   nivelUrgencia,
   type NivelUrgencia,
 } from '../constants/cocina';
+import type { EstadoPedido } from '../types/enums';
 
 /**
  * Orden y urgencia de la cola de cocina.
@@ -129,4 +130,58 @@ export function urgenciaDeComanda(
   if (faltan <= umbrales.alerta) return 'urgente';
   if (faltan <= umbrales.urgente) return 'alerta';
   return 'normal';
+}
+
+// ── Cocina por platillo ───────────────────────────────────────────────────
+
+/** Lo mínimo que hace falta de un platillo para agruparlo con sus iguales. */
+export interface PlatilloAgrupable {
+  producto_nombre: string;
+  /** null cuando el producto tiene una sola presentación. */
+  variante_etiqueta: string | null;
+}
+
+/**
+ * Agrupa platillos iguales para que una cocinera los prepare juntos.
+ *
+ * DECISIÓN: no se ordena por nombre de platillo — eso dejaría un plato pedido
+ * hace media hora esperando a que le toque el turno alfabético. En cambio, se
+ * agrupa manteniendo el orden de prioridad que ya trae la lista (de
+ * `ordenarCola`): cada grupo aparece en la posición de su primer integrante —
+ * el más urgente de ese platillo — y adentro del grupo el orden entre iguales
+ * no cambia. Así "4 arroz con camarones" quedan juntos para que una sola
+ * cocinera los prepare de una, sin que ningún plato pierda su lugar en la cola
+ * por venir después en el alfabeto.
+ *
+ * `Map` conserva el orden de inserción de sus llaves: la primera vez que
+ * aparece un platillo fija la posición del grupo entero.
+ */
+export function agruparPorPlatillo<T extends PlatilloAgrupable>(ordenados: readonly T[]): T[] {
+  const grupos = new Map<string, T[]>();
+  for (const item of ordenados) {
+    const clave = `${item.producto_nombre}::${item.variante_etiqueta ?? ''}`;
+    const grupo = grupos.get(clave);
+    if (grupo) grupo.push(item);
+    else grupos.set(clave, [item]);
+  }
+  return [...grupos.values()].flat();
+}
+
+// ── Estado agregado ──────────────────────────────────────────────────────
+
+/** El orden de avance de un estado de pedido o de línea — son el mismo conjunto de valores. */
+const ORDEN_ESTADO: EstadoPedido[] = ['ENVIADO', 'EN_PREPARACION', 'LISTO', 'ENTREGADO'];
+
+/**
+ * El estado menos avanzado de un grupo: lo que la mesera o la cocina siguen
+ * esperando. Se usa en dos niveles que comparten la misma regla —
+ * el estado de un PEDIDO es el menos avanzado de sus LÍNEAS no anuladas, y el
+ * estado de una CUENTA (para la lista de mesera) es el menos avanzado de sus
+ * PEDIDOS. Una sola función para las dos, probada una sola vez.
+ */
+export function estadoMenosAvanzado<T extends EstadoPedido>(estados: readonly T[]): T | null {
+  if (estados.length === 0) return null;
+  return estados.reduce((min, e) =>
+    ORDEN_ESTADO.indexOf(e) < ORDEN_ESTADO.indexOf(min) ? e : min,
+  );
 }
