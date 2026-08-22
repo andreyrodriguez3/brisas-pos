@@ -287,12 +287,22 @@ export class PedidosService {
     const cuentaId = await this.prisma.$transaction(async (tx) => {
       const antes = await tx.pedidoLinea.findUnique({
         where: { id: lineaId },
-        include: { opciones: true, pedido: { select: { cuenta_id: true } } },
+        include: { opciones: true, pedido: { select: { cuenta_id: true, estado: true } } },
       });
       if (!antes) throw new NotFoundException('No existe esa línea');
       if (antes.anulada) throw new BadRequestException('Esa línea está anulada');
 
       await this.exigirCuentaAbierta(tx, antes.pedido.cuenta_id);
+
+      // ⚠️ `para_llevar` queda afuera a propósito: se marca después de comer,
+      // no antes, y tiene que poder cambiarse en cualquier estado de la comanda.
+      const tocaAlgoMasQueParaLlevar =
+        dto.cantidad !== undefined || dto.opciones_ids !== undefined || dto.nota !== undefined;
+      if (tocaAlgoMasQueParaLlevar && antes.pedido.estado !== EstadoPedido.ENVIADO) {
+        throw new BadRequestException(
+          'Ya está en preparación: no se puede editar, solo marcar que se lo lleva.',
+        );
+      }
 
       if (dto.opciones_ids) {
         const opciones = await this.congelarOpciones(tx, antes.producto_id, dto.opciones_ids);
@@ -349,11 +359,15 @@ export class PedidosService {
     const cuentaId = await this.prisma.$transaction(async (tx) => {
       const antes = await tx.pedidoLinea.findUnique({
         where: { id: lineaId },
-        include: { pedido: { select: { cuenta_id: true } } },
+        include: { pedido: { select: { cuenta_id: true, estado: true } } },
       });
       if (!antes) throw new NotFoundException('No existe esa línea');
 
       await this.exigirCuentaAbierta(tx, antes.pedido.cuenta_id);
+
+      if (antes.pedido.estado !== EstadoPedido.ENVIADO) {
+        throw new BadRequestException('Ya está en preparación: no se puede quitar.');
+      }
 
       const despues = await tx.pedidoLinea.update({
         where: { id: lineaId },
