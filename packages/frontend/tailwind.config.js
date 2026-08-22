@@ -4,8 +4,8 @@
  * Dos escalas de tamaño, porque los tres roles trabajan en condiciones distintas:
  *
  *   · Escala `cocina`  — tablet compartida, señoras con poca experiencia digital,
- *     manos ocupadas, ambiente caliente, prisa. Texto base 24 px, títulos 32 px+,
- *     botones de 80 px de alto, área táctil mínima de 64 px. NADA por debajo de
+ *     manos ocupadas, ambiente caliente, prisa. Texto base 22 px, títulos 28 px+,
+ *     botones de 72 px de alto, área táctil mínima de 64 px. NADA por debajo de
  *     20 px. Estos números son requisitos de accesibilidad, no preferencias.
  *
  *   · Escala normal — mesera (celular), caja y admin (pantalla grande, usuaria
@@ -49,12 +49,18 @@ export default {
       fontSize: {
         // ── Escala cocina ──────────────────────────────────────────────────
         // El tracking negativo en los tamaños grandes es a propósito: letras
-        // muy separadas a 32px+ se leen "infladas". El cuerpo se deja en 0.
-        'cocina-xs': ['1.25rem', { lineHeight: '1.75rem' }], // 20 px — el piso
-        'cocina-base': ['1.5rem', { lineHeight: '2rem' }], //    24 px — platillos
-        'cocina-lg': ['1.75rem', { lineHeight: '2.25rem' }], //  28 px
-        'cocina-titulo': ['2rem', { lineHeight: '2.5rem', letterSpacing: '-0.01em' }], //  32 px — cliente
-        'cocina-xl': ['2.5rem', { lineHeight: '3rem', letterSpacing: '-0.015em' }], //      40 px — columnas
+        // muy separadas se leen "infladas". El cuerpo se deja en 0.
+        //
+        // Un escalón más chica que el mínimo original (cliente 32px, platillos
+        // 24px) para que quepan más tarjetas por columna ahora que cocina
+        // trabaja por platillo y no por comanda — hay más tarjetas por
+        // pantalla que antes. El piso de 20px NO se toca: sigue siendo el
+        // límite real de accesibilidad, no una preferencia.
+        'cocina-xs': ['1.25rem', { lineHeight: '1.75rem' }], //  20 px — el piso, intocable
+        'cocina-base': ['1.375rem', { lineHeight: '1.75rem' }], // 22 px — platillos
+        'cocina-lg': ['1.625rem', { lineHeight: '2rem' }], //      26 px
+        'cocina-titulo': ['1.75rem', { lineHeight: '2.25rem', letterSpacing: '-0.01em' }], // 28 px — cliente
+        'cocina-xl': ['2.25rem', { lineHeight: '2.75rem', letterSpacing: '-0.015em' }], //    36 px — columnas
 
         // ── Escala normal (mesera, caja, admin) ─────────────────────────────
         // Mismo criterio que cocina, pero más suave: acá el texto grande es un
@@ -68,14 +74,14 @@ export default {
       },
 
       spacing: {
-        'boton-cocina': '5rem', //  80 px — alto mínimo de botón en cocina
-        tactil: '4rem', //          64 px — área táctil mínima
-        'sep-cocina': '1rem', //    16 px — separación entre botones
-        'boton-normal': '3rem', //  48 px — alto mínimo en mesera/caja/admin
+        'boton-cocina': '4.5rem', // 72 px — alto mínimo de botón en cocina
+        tactil: '4rem', //           64 px — área táctil mínima
+        'sep-cocina': '1rem', //     16 px — separación entre botones
+        'boton-normal': '3rem', //   48 px — alto mínimo en mesera/caja/admin
       },
 
       minHeight: {
-        'boton-cocina': '5rem',
+        'boton-cocina': '4.5rem',
         tactil: '4rem',
         'boton-normal': '3rem',
       },
