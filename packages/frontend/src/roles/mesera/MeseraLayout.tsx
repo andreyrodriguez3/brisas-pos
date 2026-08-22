@@ -7,7 +7,7 @@ import {
 } from '@brisas/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
-import { Route, Routes, useNavigate } from 'react-router-dom';
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { useSesion } from '../../shared/estado/sesion';
 import { useEventoSocket, useSocket } from '../../shared/hooks/useSocket';
 import { BannerSinConexion } from '../../shared/ui/BannerSinConexion';
@@ -160,6 +160,9 @@ export function MeseraLayout() {
           <Route index element={<PantallaCuentas />} />
           <Route path="cuenta/:id" element={<PantallaCuenta />} />
           <Route path="cuenta/:id/pedido" element={<PantallaPedido />} />
+          {/* Red de seguridad: una URL vieja o mal armada no debe dejar la
+              pantalla en blanco — vuelve a la lista de cuentas. */}
+          <Route path="*" element={<Navigate to="/mesera" replace />} />
         </Routes>
       </main>
     </div>

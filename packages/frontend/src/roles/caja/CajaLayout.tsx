@@ -1,6 +1,6 @@
 import { EventosServidor, SalaRealtime } from '@brisas/shared';
 import { useQueryClient } from '@tanstack/react-query';
-import { NavLink, Route, Routes } from 'react-router-dom';
+import { Navigate, NavLink, Route, Routes } from 'react-router-dom';
 import { useSesion } from '../../shared/estado/sesion';
 import { useEventoSocket, useSocket } from '../../shared/hooks/useSocket';
 import { BannerSinConexion } from '../../shared/ui/BannerSinConexion';
@@ -51,7 +51,13 @@ export function CajaLayout() {
           {SECCIONES.map((s) => (
             <NavLink
               key={s.a}
-              to={s.a}
+              // ⚠️ Absoluto a propósito. Con `to={s.a}` (relativo), tocar
+              // "Turno" estando en /caja/cuenta/12 apilaba el link ENCIMA de
+              // la ruta actual (/caja/cuenta/12/turno) en vez de llevar a
+              // /caja/turno — y de ahí en adelante cada clic seguía apilando
+              // segmentos. Absoluto siempre lleva a la sección de arriba,
+              // sin importar dónde esté parada la usuaria.
+              to={`/caja/${s.a}`}
               end={s.a === ''}
               className={({ isActive }) =>
                 `rounded-lg px-3 py-2 text-sm font-medium ${
@@ -79,6 +85,10 @@ export function CajaLayout() {
           <Route path="cuenta/:id/pedido" element={<PantallaPedido base="/caja" />} />
           <Route path="para-llevar" element={<FormularioTelefonico />} />
           <Route path="turno" element={<PantallaTurno />} />
+          {/* Red de seguridad: una URL vieja o mal armada (guardada, pegada a
+              mano, o de un bug como el de arriba) no debe dejar la pantalla
+              en blanco — vuelve al tablero. */}
+          <Route path="*" element={<Navigate to="/caja" replace />} />
         </Routes>
       </main>
     </div>
