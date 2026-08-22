@@ -32,7 +32,11 @@ export function AdminLayout() {
           {SECCIONES.map((s) => (
             <NavLink
               key={s.a}
-              to={s.a}
+              // Absoluto por prevención, mismo motivo que en CajaLayout: hoy
+              // las 6 secciones son hermanas planas y esto no falla, pero un
+              // relativo se rompería en cuanto alguna gane una subruta con
+              // :id. Absoluto no tiene ese riesgo nunca.
+              to={`/admin/${s.a}`}
               end={s.a === ''}
               className={({ isActive }) =>
                 `rounded-lg px-3 py-2 text-sm font-medium ${
