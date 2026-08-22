@@ -34,6 +34,8 @@ export interface ComandaOrdenable {
   creado_en: string;
   /** Solo las cuentas PARA_LLEVAR la tienen. */
   hora_retiro?: string | null;
+  /** La cuenta ya tenía pedidos cuando se mandó este: hay un cliente sentado esperando. */
+  es_agregado: boolean;
 }
 
 /**
@@ -56,12 +58,23 @@ export function momentoDeReferencia(comanda: ComandaOrdenable): number {
 /**
  * Ordena la cola: lo que toca primero, arriba.
  *
+ * DECISIÓN: antes de mirar el tiempo, se compara `es_agregado`. Una comanda
+ * agregada es de un cliente que YA está sentado comiendo y pidió algo más —
+ * hacerlo esperar detrás de mesas nuevas que recién llegaron no tiene sentido,
+ * así que los agregados van siempre arriba de los nuevos, sin importar cuánto
+ * lleven esperando esos otros. Dentro de cada grupo (agregados entre sí, nuevos
+ * entre sí) se sigue ordenando exactamente como antes: por `momentoDeReferencia`
+ * y, si empatan, por `consecutivo_dia`.
+ *
  * Devuelve un arreglo nuevo — no toca el original, que suele venir del caché de
  * React Query. Los empates se rompen por número de comanda, que es el orden en
  * que entraron: así la lista nunca "baila" entre dos renders.
  */
 export function ordenarCola<T extends ComandaOrdenable>(comandas: readonly T[]): T[] {
   return [...comandas].sort((a, b) => {
+    const porAgregado = Number(b.es_agregado) - Number(a.es_agregado);
+    if (porAgregado !== 0) return porAgregado;
+
     const diferencia = momentoDeReferencia(a) - momentoDeReferencia(b);
     return diferencia !== 0 ? diferencia : a.consecutivo_dia - b.consecutivo_dia;
   });

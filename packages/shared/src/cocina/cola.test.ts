@@ -11,16 +11,23 @@ import {
 const T = (hhmm: string) => new Date(`2026-08-06T${hhmm}:00.000Z`).getTime();
 const iso = (hhmm: string) => new Date(T(hhmm)).toISOString();
 
-const salon = (consecutivo: number, entrada: string) => ({
+const salon = (consecutivo: number, entrada: string, esAgregado = false) => ({
   consecutivo_dia: consecutivo,
   creado_en: iso(entrada),
   hora_retiro: null,
+  es_agregado: esAgregado,
 });
 
-const paraLlevar = (consecutivo: number, entrada: string, retiro: string) => ({
+const paraLlevar = (
+  consecutivo: number,
+  entrada: string,
+  retiro: string,
+  esAgregado = false,
+) => ({
   consecutivo_dia: consecutivo,
   creado_en: iso(entrada),
   hora_retiro: iso(retiro),
+  es_agregado: esAgregado,
 });
 
 describe('momentoDeReferencia', () => {
@@ -53,6 +60,30 @@ describe('ordenarCola', () => {
   it('los empates se rompen por número de comanda: la lista no baila', () => {
     const cola = ordenarCola([salon(7, '12:00'), salon(4, '12:00'), salon(5, '12:00')]);
     expect(cola.map((c) => c.consecutivo_dia)).toEqual([4, 5, 7]);
+  });
+
+  it('una comanda agregada recién creada va antes que una nueva que lleva más esperando', () => {
+    // La mesa 2 ya está comiendo y pidió algo más: no debe hacer fila detrás
+    // de una mesa nueva que entró antes pero todavía no tiene nada en camino.
+    const cola = ordenarCola([
+      salon(1, '12:00'),
+      salon(2, '12:20', true),
+    ]);
+    expect(cola.map((c) => c.consecutivo_dia)).toEqual([2, 1]);
+  });
+
+  it('entre dos comandas agregadas, se respeta el orden por tiempo y consecutivo de siempre', () => {
+    const cola = ordenarCola([
+      salon(3, '12:10', true),
+      salon(1, '12:00', true),
+      salon(2, '12:00', true),
+    ]);
+    expect(cola.map((c) => c.consecutivo_dia)).toEqual([1, 2, 3]);
+  });
+
+  it('entre dos comandas nuevas, el orden sigue igual que siempre (sin agregados de por medio)', () => {
+    const cola = ordenarCola([salon(2, '12:15'), salon(1, '12:00')]);
+    expect(cola.map((c) => c.consecutivo_dia)).toEqual([1, 2]);
   });
 
   it('no muta el arreglo que recibe', () => {
