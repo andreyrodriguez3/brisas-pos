@@ -396,6 +396,15 @@ export interface EstadoTurnoActual {
   /** Lo vendido hasta ahora, en las tres bolsas. */
   totalizadores: { salon: Colones; para_llevar: Colones; envases: Colones };
   puede_cerrar: boolean;
+  /**
+   * El turno abierto quedó de un día anterior — nadie cerró el día pasado y
+   * el sistema, sin frenar a nadie, lo siguió reusando. No es un error del
+   * sistema: es la reutilización automática documentada haciendo justo lo
+   * que dice que hace. Pero caja tiene que verlo para saber que le conviene
+   * cerrar el día ya, antes de que se sigan mezclando más ventas de hoy con
+   * las de ese turno viejo.
+   */
+  es_de_otro_dia: boolean;
 }
 
 /** Cuánto entró por cada forma de pago. Para cuadrar la caja física. */

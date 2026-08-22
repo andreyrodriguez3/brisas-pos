@@ -225,6 +225,7 @@ export class TurnosService {
         cuentas_sin_resolver: [],
         totalizadores: { salon: 0, para_llevar: 0, envases: 0 },
         puede_cerrar: false,
+        es_de_otro_dia: false,
       };
     }
 
@@ -278,6 +279,10 @@ export class TurnosService {
       cuentas_sin_resolver: sinResolver,
       totalizadores,
       puede_cerrar: sinResolver.length === 0,
+      // No frena nada — el turno se sigue reusando igual, es la reutilización
+      // automática ya documentada funcionando como debe. Es solo el aviso
+      // para que caja note que conviene cerrar el día antes de seguir.
+      es_de_otro_dia: turno.fecha !== diaLocal(),
     };
   }
 
