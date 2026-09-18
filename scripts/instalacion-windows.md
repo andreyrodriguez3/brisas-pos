@@ -1,5 +1,7 @@
 # Instalación en la PC de caja (Windows)
 
+> Esta guía antigua supone una red privada y una base en la ruta predeterminada. Para la instalación real de septiembre de 2026, con dos monitores y WiFi compartido con clientes, seguí primero [la guía de puesta en marcha](../docs/puesta-en-marcha-2026.md) y [el protocolo de pruebas](../docs/pruebas-de-aceptacion.md). En particular, no fijes `192.168.1.50` sin conocer el DHCP ni ejecutes un respaldo sin comprobar la ruta de `DATABASE_URL`.
+
 Se hace **una sola vez**, con el restaurante cerrado. Al terminar, el sistema tiene que arrancar solo al encender la computadora, sin que nadie abra una terminal.
 
 La red y los dispositivos van en `setup-red.md`. Esto es solo la PC servidor.
@@ -124,7 +126,7 @@ Dejá una **llave USB conectada permanentemente** en `E:`. El script copia ahí 
 
 Sin la USB conectada el respaldo local se hace igual — la advertencia sale en el log, no frena nada.
 
-Para respaldos en caliente más seguros, instalá `sqlite3.exe` y ponelo en el PATH. Sin él, el script copia los archivos, que también sirve.
+Instalá `sqlite3.exe` y ponelo en el PATH antes de programar el respaldo. El script exige `.backup` para copiar la base de forma consistente mientras el sistema está trabajando; si falta `sqlite3.exe`, falla con un mensaje claro y no deja un respaldo aparentemente válido.
 
 ### Probar la restauración — obligatorio
 

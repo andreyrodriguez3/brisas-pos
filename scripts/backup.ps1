@@ -6,10 +6,8 @@
   Copia el archivo SQLite con marca de tiempo a una carpeta local y, si está
   conectada, a una llave USB. Retiene 30 días.
 
-  Usa el comando .backup de SQLite si hay sqlite3.exe disponible: es la forma
-  correcta de copiar una base en WAL mientras el sistema está trabajando. Si no
-  lo encuentra, copia los tres archivos (.sqlite, -wal, -shm) juntos, que sigue
-  siendo consistente porque WAL no reescribe el archivo principal.
+  Usa el comando .backup de SQLite para obtener una copia consistente mientras
+  el sistema está trabajando. Requiere sqlite3.exe.
 
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File scripts\backup.ps1
@@ -35,7 +33,9 @@ param(
   [string]$DestinoLocal,
   # Letra de la llave USB que queda conectada permanentemente.
   [string]$UnidadUsb = 'E:',
-  [int]$DiasRetencion = 30
+  [string]$EtiquetaUsb = 'BRISAS_BACKUP',
+  [switch]$ExigirUsb,
+  [ValidateRange(1, 3650)][int]$DiasRetencion = 30
 )
 
 $ErrorActionPreference = 'Stop'
@@ -46,7 +46,25 @@ $ErrorActionPreference = 'Stop'
 $RaizScript = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $Raiz = Split-Path -Parent $RaizScript
 
-if (-not $BaseDatos) { $BaseDatos = Join-Path $Raiz 'packages\backend\data\brisas.sqlite' }
+if (-not $BaseDatos) {
+  $envPath = Join-Path $Raiz 'packages\backend\.env'
+  if (-not (Test-Path -LiteralPath $envPath)) {
+    throw "No existe $envPath. Indicá -BaseDatos o configurá DATABASE_URL antes de respaldar."
+  }
+  $lineaUrl = Get-Content -LiteralPath $envPath | Where-Object { $_ -match '^\s*DATABASE_URL\s*=' } | Select-Object -Last 1
+  if (-not $lineaUrl) { throw "Falta DATABASE_URL en $envPath" }
+  $url = ($lineaUrl -replace '^\s*DATABASE_URL\s*=\s*', '').Trim().Trim('"', "'")
+  if ($url -notmatch '^file:(.+)$' -or $url.Contains('?')) {
+    throw 'DATABASE_URL debe ser file:<ruta SQLite> sin parámetros; indicá -BaseDatos si usás otra configuración.'
+  }
+  $rutaDb = $Matches[1]
+  if ($rutaDb -match '^[A-Za-z]:[/\\]') {
+    $BaseDatos = $rutaDb
+  } else {
+    # Prisma interpreta las rutas relativas desde el directorio del schema.
+    $BaseDatos = [System.IO.Path]::GetFullPath((Join-Path (Join-Path $Raiz 'packages\backend\prisma') $rutaDb))
+  }
+}
 if (-not $DestinoLocal) { $DestinoLocal = Join-Path $Raiz 'respaldos' }
 
 function Escribir($mensaje) {
@@ -58,7 +76,7 @@ if (-not (Test-Path $BaseDatos)) {
   exit 1
 }
 
-$marca = Get-Date -Format 'yyyy-MM-dd_HHmm'
+$marca = Get-Date -Format 'yyyy-MM-dd_HHmmss'
 $nombre = "brisas_$marca.sqlite"
 
 # ── Destinos ────────────────────────────────────────────────────────────────
@@ -78,7 +96,16 @@ $raizUsb = $UnidadUsb.TrimEnd('\')
 $destinoUsb = "$raizUsb\BrisasPOS\respaldos"
 
 $usbConectada = $false
-try { $usbConectada = Test-Path -LiteralPath "$raizUsb\" } catch { $usbConectada = $false }
+try {
+  $usbConectada = Test-Path -LiteralPath "$raizUsb\"
+  if ($usbConectada) {
+    $letra = $raizUsb.TrimEnd(':')
+    $volumen = Get-Volume -DriveLetter $letra -ErrorAction Stop
+    # Algunas memorias USB informan DriveType=Fixed; la etiqueta controlada
+    # evita copiar a otra unidad que recibió accidentalmente la misma letra.
+    $usbConectada = $volumen.FileSystemLabel -eq $EtiquetaUsb
+  }
+} catch { $usbConectada = $false }
 
 if ($usbConectada) {
   if (-not (Test-Path -LiteralPath $destinoUsb)) {
@@ -87,7 +114,7 @@ if ($usbConectada) {
   $destinos += $destinoUsb
 } else {
   # Aviso, no error: la copia local igual se hace.
-  Escribir "AVISO: la llave USB ($UnidadUsb) no esta conectada. Solo respaldo local."
+  Escribir "AVISO: no está disponible la USB $UnidadUsb con etiqueta $EtiquetaUsb. Solo respaldo local."
 }
 
 # ── Copia ───────────────────────────────────────────────────────────────────
@@ -97,32 +124,32 @@ if ($usbConectada) {
 # entero.
 $comandoSqlite = Get-Command sqlite3.exe -ErrorAction SilentlyContinue
 $sqlite3 = if ($comandoSqlite) { $comandoSqlite.Source } else { $null }
+if (-not $sqlite3) {
+  throw 'No se encontró sqlite3.exe. Instalalo antes de respaldar: copiar SQLite y WAL por separado mientras el sistema escribe puede producir un respaldo inconsistente.'
+}
 
 $primero = Join-Path $destinos[0] $nombre
 
-if ($sqlite3) {
-  # Copia consistente en caliente, sin detener el servicio.
-  & $sqlite3 $BaseDatos ".backup '$primero'"
-  if ($LASTEXITCODE -ne 0) { throw "sqlite3 .backup fallo con codigo $LASTEXITCODE" }
-  Escribir "Respaldo con sqlite3 .backup -> $primero"
-} else {
-  Copy-Item $BaseDatos $primero -Force
-  foreach ($sufijo in '-wal', '-shm') {
-    $extra = "$BaseDatos$sufijo"
-    if (Test-Path $extra) { Copy-Item $extra "$primero$sufijo" -Force }
-  }
-  Escribir "Respaldo por copia de archivos -> $primero"
-  Escribir "  (instala sqlite3.exe para respaldos en caliente mas seguros)"
+# Copia consistente en caliente, sin detener el servicio.
+& $sqlite3 $BaseDatos ".backup '$primero'"
+if ($LASTEXITCODE -ne 0) { throw "sqlite3 .backup fallo con codigo $LASTEXITCODE" }
+$chequeo = & $sqlite3 $primero 'PRAGMA integrity_check;'
+if ($LASTEXITCODE -ne 0 -or $chequeo -ne 'ok') {
+  Remove-Item -LiteralPath $primero -Force
+  throw "El respaldo no pasó integrity_check: $chequeo"
 }
+Escribir "Respaldo verificado con sqlite3 .backup -> $primero"
 
 if ($destinos.Count -gt 1) {
   foreach ($destino in $destinos[1..($destinos.Count - 1)]) {
-    Copy-Item $primero (Join-Path $destino $nombre) -Force
-    foreach ($sufijo in '-wal', '-shm') {
-      $extra = "$primero$sufijo"
-      if (Test-Path $extra) { Copy-Item $extra (Join-Path $destino "$nombre$sufijo") -Force }
+    $copiaUsb = Join-Path $destino $nombre
+    Copy-Item -LiteralPath $primero -Destination $copiaUsb -Force
+    if ((Get-FileHash -LiteralPath $primero -Algorithm SHA256).Hash -ne
+        (Get-FileHash -LiteralPath $copiaUsb -Algorithm SHA256).Hash) {
+      Remove-Item -LiteralPath $copiaUsb -Force
+      throw "La copia USB no coincide con el respaldo local: $copiaUsb"
     }
-    Escribir "Copiado a $destino"
+    Escribir "Copiado y verificado en $destino"
   }
 }
 
@@ -142,3 +169,4 @@ Escribir "Retencion: $borrados archivo(s) de mas de $DiasRetencion dias eliminad
 
 $tamano = [math]::Round((Get-Item $primero).Length / 1MB, 2)
 Escribir "Listo. Tamano: $tamano MB"
+if ($ExigirUsb -and -not $usbConectada) { exit 2 }
