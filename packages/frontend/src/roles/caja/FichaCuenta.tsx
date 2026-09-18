@@ -93,7 +93,9 @@ export function FichaCuenta() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {c.canal === CanalCuenta.PARA_LLEVAR && <Insignia tono="info">Para llevar</Insignia>}
+                {c.canal === CanalCuenta.PARA_LLEVAR && (
+                  <Insignia tono="info">Para llevar</Insignia>
+                )}
                 {c.estado === EstadoCuenta.EN_COBRO && <Insignia tono="aviso">En cobro</Insignia>}
                 {c.estado === EstadoCuenta.COBRADA && <Insignia tono="ok">Cobrada</Insignia>}
                 {c.estado === EstadoCuenta.ANULADA && <Insignia tono="aviso">Anulada</Insignia>}
@@ -235,16 +237,21 @@ export function FichaCuenta() {
                 </button>
               )}
 
-              <button className="boton-secundario w-full" onClick={() => setModal('descuento')}>
-                Descuento o cortesía
-              </button>
+              {e.pagado === 0 && (
+                <button className="boton-secundario w-full" onClick={() => setModal('descuento')}>
+                  Descuento o cortesía
+                </button>
+              )}
               <button
                 className="boton-secundario w-full"
                 onClick={() => navegar(`/caja/cuenta/${cuentaId}/pedido`)}
               >
                 Agregar pedido
               </button>
-              <button className="boton-secundario w-full text-red-700" onClick={() => setModal('anular')}>
+              <button
+                className="boton-secundario w-full text-red-700"
+                onClick={() => setModal('anular')}
+              >
                 Anular la cuenta
               </button>
 

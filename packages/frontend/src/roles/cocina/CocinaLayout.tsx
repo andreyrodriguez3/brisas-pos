@@ -1,4 +1,4 @@
-import { EstadoLinea, type LineaCocina } from '@brisas/shared';
+import { EstadoLinea, Rol, type LineaCocina } from '@brisas/shared';
 import { useEffect } from 'react';
 import { endpoints } from '../../shared/api/endpoints';
 import { useSesion } from '../../shared/estado/sesion';
@@ -38,14 +38,18 @@ const COLUMNAS = [
  * sola cocinera prepare de una todos los que haya de un mismo plato.
  */
 export function CocinaLayout() {
-  const { token, abrir } = useSesion();
+  const { usuario, abrir } = useSesion();
   const cola = useCola();
 
-  // La tablet arranca directo en la app y nunca pide contraseña.
+  // La tablet arranca directo en la app y nunca pide contraseña. Se pide un
+  // token propio de COCINA sin importar qué sesión hubiera guardada antes:
+  // `localStorage` se comparte entre pestañas del mismo navegador, y si esta
+  // pestaña heredó el token de una mesera o de caja logueada antes en el mismo
+  // equipo, cocina se quedaría pegada con 403 en vez de pedir el suyo.
   useEffect(() => {
-    if (token) return;
+    if (usuario?.rol === Rol.COCINA) return;
     endpoints.auth.cocina().then(abrir).catch(console.error);
-  }, [token, abrir]);
+  }, [usuario, abrir]);
 
   // El navegador no deja sonar nada hasta el primer toque de la usuaria. La
   // tablet vive encendida todo el día: basta con desbloquearlo una vez.

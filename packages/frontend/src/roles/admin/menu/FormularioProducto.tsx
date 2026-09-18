@@ -42,6 +42,7 @@ export function FormularioProducto({
   const [nombreEn, setNombreEn] = useState(producto?.nombre_en ?? '');
   const [descripcion, setDescripcion] = useState(producto?.descripcion ?? '');
   const [esEnvase, setEsEnvase] = useState(producto?.es_envase ?? false);
+  const [vaACocina, setVaACocina] = useState(producto?.va_a_cocina ?? true);
   const [gruposIds, setGruposIds] = useState<number[]>(producto?.grupos_opcion_ids ?? []);
   const [variantes, setVariantes] = useState<VarianteForm[]>(
     producto?.variantes.map((v) => ({
@@ -60,6 +61,7 @@ export function FormularioProducto({
         nombre_en: nombreEn.trim() || null,
         descripcion: descripcion.trim() || null,
         es_envase: esEnvase,
+        va_a_cocina: vaACocina,
         orden: producto?.orden ?? 0,
         grupos_opcion_ids: gruposIds,
         variantes: variantes.map((v, i) => ({
@@ -306,6 +308,15 @@ export function FormularioProducto({
             onCambio={setEsEnvase}
             etiqueta="Este producto es el envase"
             detalle="Lo que se cobre con este producto va al totalizador de envases, aparte de las ventas de salón y de para llevar. Normalmente solo hay uno."
+          />
+        </section>
+
+        <section className="rounded-lg bg-slate-50 p-4">
+          <Interruptor
+            activo={!vaACocina}
+            onCambio={(apagado) => setVaACocina(!apagado)}
+            etiqueta="No va a cocina"
+            detalle="Se cobra directo en caja (cajetas, dulces sueltos) y nunca aparece en la cola de cocina."
           />
         </section>
       </div>

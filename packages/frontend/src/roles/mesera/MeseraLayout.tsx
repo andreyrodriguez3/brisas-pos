@@ -39,7 +39,7 @@ export function MeseraLayout() {
   const cliente = useQueryClient();
   const navegar = useNavigate();
   const { socket, conectado } = useSocket(SalaRealtime.MESERAS);
-  const { pendientes, reintentar } = useProcesarCola();
+  const { pendientes, reintentar, reintentarRechazado, descartar } = useProcesarCola();
   const [avisos, setAvisos] = useState<AvisoPlatillo[]>([]);
 
   const refrescar = useCallback(() => {
@@ -91,6 +91,8 @@ export function MeseraLayout() {
   });
 
   const color = usuario?.color_hex || COLOR_SIN_MESERA;
+  const enEspera = pendientes.filter((p) => !p.rechazado);
+  const rechazados = pendientes.filter((p) => p.rechazado);
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -101,17 +103,45 @@ export function MeseraLayout() {
         que un pedido todavía no salió — es lo que la deja seguir trabajando
         tranquila en la zona sin señal.
       */}
-      {pendientes.length > 0 && (
+      {enEspera.length > 0 && (
         <button
           onClick={() => void reintentar()}
           className="flex w-full items-center justify-center gap-2 bg-amber-500 px-3 py-2 text-sm font-semibold text-white"
         >
           <span aria-hidden>⏳</span>
-          {pendientes.length} pedido{pendientes.length === 1 ? '' : 's'} pendiente
-          {pendientes.length === 1 ? '' : 's'} de enviar
+          {enEspera.length} pedido{enEspera.length === 1 ? '' : 's'} pendiente
+          {enEspera.length === 1 ? '' : 's'} de enviar
           <span className="font-normal opacity-90">· tocá para reintentar</span>
         </button>
       )}
+      {rechazados.map((pedido) => (
+        <div
+          key={pedido.idempotencia_key}
+          role="alert"
+          className="bg-red-100 px-3 py-3 text-red-900"
+        >
+          <p className="font-bold">Pedido de {pedido.cuenta_nombre} NO enviado</p>
+          <p>{pedido.ultimo_error ?? 'Revisá este pedido antes de continuar.'}</p>
+          <div className="mt-2 flex gap-2">
+            <button
+              className="boton-secundario"
+              onClick={() => reintentarRechazado(pedido.idempotencia_key)}
+            >
+              Reintentar
+            </button>
+            <button
+              className="boton-secundario"
+              onClick={() => {
+                if (window.confirm('¿Confirmaste con caja que este pedido no debe enviarse?')) {
+                  descartar(pedido.idempotencia_key);
+                }
+              }}
+            >
+              Descartar tras revisar
+            </button>
+          </div>
+        </div>
+      ))}
 
       {/*
         Un platillo suyo está listo. Tocarlo la lleva directo a esa cuenta —

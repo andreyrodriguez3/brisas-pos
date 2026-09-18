@@ -124,7 +124,7 @@ export class ReportesService {
 
     for (const cuenta of cuentas) {
       const subtotal = cuenta.pedidos.reduce(
-        (t, p) => t + p.lineas.reduce((s, l) => s + calcularTotalLinea(l), 0),
+        (t, p) => t + p.lineas.reduce((s, l) => s + (l.anulada ? 0 : calcularTotalLinea(l)), 0),
         0,
       );
       totalDescuentos += aplicarDescuentos(

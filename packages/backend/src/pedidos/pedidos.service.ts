@@ -213,7 +213,7 @@ export class PedidosService {
       where: {
         anulada: false,
         estado_linea: { in: [EstadoLinea.ENVIADO, EstadoLinea.EN_PREPARACION, EstadoLinea.LISTO] },
-        producto: { es_envase: false },
+        producto: { es_envase: false, va_a_cocina: true },
         pedido: {
           dia: diaLocal(),
           cuenta: { estado: { not: EstadoCuenta.ANULADA } },
@@ -314,6 +314,7 @@ export class PedidosService {
 
       if (dto.opciones_ids) {
         const opciones = await this.congelarOpciones(tx, antes.producto_id, dto.opciones_ids);
+        await this.validarGrupos(tx, antes.producto_id, dto.opciones_ids);
         await tx.lineaOpcion.deleteMany({ where: { linea_id: lineaId } });
         await tx.lineaOpcion.createMany({
           data: opciones.map((o) => ({ linea_id: lineaId, ...o })),
@@ -607,19 +608,7 @@ export class PedidosService {
       }
 
       const opciones = await this.congelarOpciones(tx, producto.id, linea.opciones_ids);
-
-      // Los grupos obligatorios tienen que estar contestados.
-      for (const { grupo } of producto.grupos) {
-        if (!grupo.obligatorio) continue;
-        const elegidas = await tx.opcion.count({
-          where: { id: { in: linea.opciones_ids }, grupo_opcion_id: grupo.id },
-        });
-        if (elegidas < grupo.min_sel) {
-          throw new BadRequestException(
-            `"${producto.nombre_es}" necesita que elijas ${grupo.nombre.toLowerCase()}`,
-          );
-        }
-      }
+      await this.validarGrupos(tx, producto.id, linea.opciones_ids);
 
       congeladas.push({
         producto_id: producto.id,
@@ -665,6 +654,38 @@ export class PedidosService {
       nombre_snapshot: o.nombre,
       precio_extra_snapshot: o.precio_extra,
     }));
+  }
+
+  private async validarGrupos(
+    tx: Prisma.TransactionClient,
+    productoId: number,
+    opcionesIds: number[],
+  ): Promise<void> {
+    if (new Set(opcionesIds).size !== opcionesIds.length) {
+      throw new BadRequestException('Una opción no se puede elegir dos veces');
+    }
+    const producto = await tx.producto.findUnique({
+      where: { id: productoId },
+      select: { nombre_es: true, grupos: { include: { grupo: true } } },
+    });
+    if (!producto) throw new BadRequestException('Ese producto ya no existe');
+    const elegidas = await tx.opcion.findMany({
+      where: { id: { in: opcionesIds } },
+      select: { grupo_opcion_id: true },
+    });
+    for (const { grupo } of producto.grupos) {
+      const cantidad = elegidas.filter((o) => o.grupo_opcion_id === grupo.id).length;
+      if (grupo.obligatorio && cantidad < grupo.min_sel) {
+        throw new BadRequestException(
+          `"${producto.nombre_es}" necesita que elijas ${grupo.nombre.toLowerCase()}`,
+        );
+      }
+      if (cantidad > grupo.max_sel || (cantidad > 0 && cantidad < grupo.min_sel)) {
+        throw new BadRequestException(
+          `"${grupo.nombre}" permite entre ${grupo.min_sel} y ${grupo.max_sel} opciones`,
+        );
+      }
+    }
   }
 
   /**

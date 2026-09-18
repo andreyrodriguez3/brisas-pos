@@ -110,6 +110,19 @@ export class AuthService {
     return hash(pin);
   }
 
+  /** El rol del JWT solo vale mientras coincida con la usuaria activa en la base. */
+  async validarSesion(payload: PayloadJwt): Promise<PayloadJwt> {
+    if (!Number.isInteger(payload?.sub)) throw new UnauthorizedException('Sesión inválida');
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: payload.sub },
+      select: { activo: true, rol: true, nombre: true },
+    });
+    if (!usuario?.activo || usuario.rol !== payload.rol) {
+      throw new UnauthorizedException('Esta sesión ya no está activa. Volvé a entrar.');
+    }
+    return { sub: payload.sub, rol: payload.rol, nombre: usuario.nombre };
+  }
+
   /**
    * La mesera no debe loguearse cada rato; caja vive menos por estar fija.
    *

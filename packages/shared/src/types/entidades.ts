@@ -78,6 +78,8 @@ export interface Producto {
   orden: number;
   /** El envase plástico. Sus líneas van siempre al totalizador ENVASES. */
   es_envase: boolean;
+  /** false = caja lo agrega directo al cobrar; nunca aparece en la cola de cocina. */
+  va_a_cocina: boolean;
 }
 
 export interface Variante {

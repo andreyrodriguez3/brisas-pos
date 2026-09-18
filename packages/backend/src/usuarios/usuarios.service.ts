@@ -11,6 +11,7 @@ import {
 import { AuthService } from '../auth/auth.service';
 import { AuditoriaService } from '../auditoria/auditoria.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 
 /** El hash del PIN NUNCA sale del backend, ni siquiera hacia el panel de admin. */
 const SIN_HASH = {
@@ -28,6 +29,7 @@ export class UsuariosService {
     private readonly prisma: PrismaService,
     private readonly auth: AuthService,
     private readonly auditoria: AuditoriaService,
+    private readonly realtime: RealtimeGateway,
   ) {}
 
   async listar(incluirInactivas = false) {
@@ -97,13 +99,16 @@ export class UsuariosService {
     // El color solo se reserva entre meseras; hay que mirar el rol RESULTANTE,
     // no el actual: pasar a alguien de caja a mesera también reserva su color.
     const rolResultante = dto.rol ?? (actual.rol as Rol);
+    if (actual.rol === Rol.ADMIN && rolResultante !== Rol.ADMIN) {
+      await this.exigirQueQuedeUnaAdmin(id);
+    }
     if (dto.color_hex && rolResultante === Rol.MESERA) {
       await this.exigirColorLibre(dto.color_hex, id);
     }
 
     const { pin, ...datos } = dto;
 
-    return this.prisma.$transaction(async (tx) => {
+    const resultado = await this.prisma.$transaction(async (tx) => {
       const despues = await tx.usuario.update({
         where: { id },
         data: {
@@ -136,6 +141,8 @@ export class UsuariosService {
       );
       return despues;
     });
+    if (dto.rol !== undefined && dto.rol !== actual.rol) this.realtime.desconectarUsuario(id);
+    return resultado;
   }
 
   /**
@@ -155,7 +162,7 @@ export class UsuariosService {
 
     if (!activo) await this.exigirQueQuedeUnaAdmin(id);
 
-    return this.prisma.$transaction(async (tx) => {
+    const resultado = await this.prisma.$transaction(async (tx) => {
       const despues = await tx.usuario.update({
         where: { id },
         data: { activo },
@@ -173,6 +180,8 @@ export class UsuariosService {
       );
       return despues;
     });
+    if (!activo) this.realtime.desconectarUsuario(id);
+    return resultado;
   }
 
   // ── Internos ──────────────────────────────────────────────────────────────

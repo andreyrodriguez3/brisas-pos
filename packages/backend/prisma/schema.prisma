@@ -130,6 +130,10 @@ model Producto {
   orden        Int     @default(0)
   /// El envase plástico. Sus líneas van SIEMPRE al totalizador ENVASES.
   es_envase    Boolean @default(false)
+  /// false = caja lo agrega directo al cobrar (cajetas, dulces sueltos) y
+  /// nunca aparece en la cola de cocina. El envase también va en false, pero
+  /// por su propio flag `es_envase` — este es el genérico para lo demás.
+  va_a_cocina  Boolean @default(true)
 
   categoria Categoria       @relation(fields: [categoria_id], references: [id])
   variantes Variante[]

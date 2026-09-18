@@ -51,6 +51,8 @@ export const crearProductoSchema = z.object({
   descripcion: z.string().trim().max(300).optional().nullable(),
   orden: z.number().int().min(0).default(0),
   es_envase: z.boolean().default(false),
+  /** false = caja lo agrega directo al cobrar; nunca aparece en la cola de cocina. */
+  va_a_cocina: z.boolean().default(true),
   variantes: z.array(crearVarianteSchema).min(1, 'Un producto necesita al menos una variante'),
   grupos_opcion_ids: z.array(zId).default([]),
 });
