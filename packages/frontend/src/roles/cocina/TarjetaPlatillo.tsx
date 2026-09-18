@@ -5,20 +5,20 @@ import {
   minutosDeEspera,
   minutosParaRetiro,
   urgenciaDeComanda,
-  type ComandaCocina,
+  type LineaCocina,
   type UmbralesCocina,
 } from '@brisas/shared';
 import { AVANCE } from './useCola';
 
 interface Props {
-  comanda: ComandaCocina;
+  linea: LineaCocina;
   ahora: number;
   umbrales: UmbralesCocina;
-  /** Acaba de entrar: parpadea unos segundos. */
+  /** Acaba de entrar (toda la comanda a la que pertenece): parpadea unos segundos. */
   parpadea: boolean;
   /** El cambio anterior todavía va en camino: no acepta otro toque. */
   enVuelo: boolean;
-  onTocar: (comanda: ComandaCocina) => void;
+  onTocar: (linea: LineaCocina) => void;
 }
 
 /**
@@ -39,38 +39,43 @@ const ETIQUETA_ESTADO: Record<string, { texto: string; clase: string }> = {
 };
 
 /**
- * Una comanda.
+ * Un platillo — UNA línea de un pedido, no la comanda entera.
+ *
+ * Con varias cocineras repartiéndose el trabajo, cada una avanza los
+ * platillos que le tocan sin esperar al resto de la comanda: "4 arroz con
+ * camarón" quedan agrupados (ver `agruparPorPlatillo` en shared) para que una
+ * sola cocinera los prepare de una.
  *
  * **La tarjeta entera es el botón.** Un toque avanza de estado y ya: no hay
  * diálogo de confirmación, no hay menú, no hay nada que buscar. Si el toque
  * estuvo mal, el botón DESHACER de abajo lo devuelve durante 30 segundos.
  *
  * Todo lo que se lee acá está en la escala `cocina`: el nombre del cliente a
- * 32 px, los platillos a 24 px, nada por debajo de 20 px. Son requisitos de
+ * 32 px, el platillo a 24 px, nada por debajo de 20 px. Son requisitos de
  * accesibilidad, no preferencias — las usuarias son señoras con poca
  * experiencia digital, con las manos ocupadas y con prisa.
  */
-export function TarjetaComanda({ comanda, ahora, umbrales, parpadea, enVuelo, onTocar }: Props) {
-  const paso = AVANCE[comanda.estado];
-  const urgencia = urgenciaDeComanda(comanda, ahora, umbrales);
-  const esParaLlevar = comanda.canal === CanalCuenta.PARA_LLEVAR;
-  const colorMesera = comanda.mesera_color ?? COLOR_SIN_MESERA;
+export function TarjetaPlatillo({ linea, ahora, umbrales, parpadea, enVuelo, onTocar }: Props) {
+  const paso = AVANCE[linea.estado];
+  const urgencia = urgenciaDeComanda(linea, ahora, umbrales);
+  const esParaLlevar = linea.canal === CanalCuenta.PARA_LLEVAR;
+  const colorMesera = linea.mesera_color ?? COLOR_SIN_MESERA;
 
   return (
     <button
       type="button"
       disabled={enVuelo || !paso}
-      onClick={() => onTocar(comanda)}
-      // `text-left`: es un botón, pero por dentro es una comanda que se lee.
+      onClick={() => onTocar(linea)}
+      // `text-left`: es un botón, pero por dentro es un platillo que se lee.
       className={`mb-sep-cocina w-full overflow-hidden rounded-xl border border-slate-200/70
         border-l-8 bg-white text-left shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_20px_-12px_rgba(15,23,42,0.16)]
-        transition active:scale-[0.99] disabled:opacity-60 ${BORDE[comanda.estado] ?? ''}
+        transition active:scale-[0.99] disabled:opacity-60 ${BORDE[linea.estado] ?? ''}
         ${parpadea ? 'animate-entrada-nueva' : ''}`}
     >
       {/* Banda naranja: esto se suma a una cuenta que ya estaba comiendo. */}
-      {comanda.es_agregado && (
+      {linea.es_agregado && (
         <div className="estado-agregado px-4 py-2 text-cocina-xs font-bold uppercase tracking-wide">
-          Agregado · {comanda.nombre_cliente}
+          Agregado · {linea.nombre_cliente}
         </div>
       )}
 
@@ -84,57 +89,53 @@ export function TarjetaComanda({ comanda, ahora, umbrales, parpadea, enVuelo, on
 
         <div className="min-w-0 flex-1">
           <p className="truncate text-cocina-titulo font-bold uppercase leading-tight">
-            {comanda.nombre_cliente}
+            {linea.nombre_cliente}
           </p>
           <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
             {/* text-cocina-xs, no un tamaño de chip más chico: nada baja de
                 20px en esta pantalla, ni siquiera una etiqueta. */}
             <span
               className={`shrink-0 rounded px-1.5 text-cocina-xs font-bold uppercase tracking-wide ${
-                ETIQUETA_ESTADO[comanda.estado]?.clase ?? ''
+                ETIQUETA_ESTADO[linea.estado]?.clase ?? ''
               }`}
             >
-              {ETIQUETA_ESTADO[comanda.estado]?.texto}
+              {ETIQUETA_ESTADO[linea.estado]?.texto}
             </span>
             <p className="text-cocina-xs text-slate-600">
-              {esParaLlevar ? 'PARA LLEVAR' : `Mesera: ${comanda.mesera_nombre ?? '—'}`}
-              {comanda.referencia && ` · ${comanda.referencia}`}
+              {esParaLlevar ? 'PARA LLEVAR' : `Mesera: ${linea.mesera_nombre ?? '—'}`}
+              {linea.referencia && ` · ${linea.referencia}`}
             </p>
           </div>
         </div>
 
         <Temporizador
-          comanda={comanda}
+          linea={linea}
           ahora={ahora}
           color={COLORES_URGENCIA[urgencia]}
           destacado={urgencia !== 'normal'}
         />
       </header>
 
-      <ul className="border-t-2 border-black/10 px-4 py-3">
-        {comanda.lineas.map((linea) => (
-          <li key={linea.id} className="py-1.5">
-            <p className="text-cocina-base font-semibold leading-snug">
-              <span className="tabular-nums">{linea.cantidad} ×</span> {linea.producto_nombre}
-              {linea.variante_etiqueta && (
-                <span className="font-normal"> ({linea.variante_etiqueta})</span>
-              )}
-            </p>
+      <div className="border-t-2 border-black/10 px-4 py-3">
+        <p className="text-cocina-base font-semibold leading-snug">
+          <span className="tabular-nums">{linea.cantidad} ×</span> {linea.producto_nombre}
+          {linea.variante_etiqueta && (
+            <span className="font-normal"> ({linea.variante_etiqueta})</span>
+          )}
+        </p>
 
-            {linea.opciones.length > 0 && (
-              <p className="pl-8 text-cocina-xs text-slate-700">→ {linea.opciones.join(' · ')}</p>
-            )}
+        {linea.opciones.length > 0 && (
+          <p className="pl-8 text-cocina-xs text-slate-700">→ {linea.opciones.join(' · ')}</p>
+        )}
 
-            {/* "SIN CEBOLLA": el dato que más se pasa por alto y el que más
-                platos devuelve. Mayúsculas y destacado, sin excepción. */}
-            {linea.nota && (
-              <p className="mt-1 ml-8 inline-block">
-                <span className="nota-cliente text-cocina-xs">{linea.nota}</span>
-              </p>
-            )}
-          </li>
-        ))}
-      </ul>
+        {/* "SIN CEBOLLA": el dato que más se pasa por alto y el que más
+            platos devuelve. Mayúsculas y destacado, sin excepción. */}
+        {linea.nota && (
+          <p className="mt-1 ml-8 inline-block">
+            <span className="nota-cliente text-cocina-xs">{linea.nota}</span>
+          </p>
+        )}
+      </div>
 
       {/* Palabras en español, no íconos sueltos. 80 px de alto: imposible errarle. */}
       {paso && (
@@ -152,21 +153,21 @@ export function TarjetaComanda({ comanda, ahora, umbrales, parpadea, enVuelo, on
  * llevar, cuánto falta para que venga a recogerlo.
  */
 function Temporizador({
-  comanda,
+  linea,
   ahora,
   color,
   destacado,
 }: {
-  comanda: ComandaCocina;
+  linea: LineaCocina;
   ahora: number;
   color: string;
   destacado: boolean;
 }) {
-  const faltan = minutosParaRetiro(comanda, ahora);
+  const faltan = minutosParaRetiro(linea, ahora);
 
   const texto =
     faltan === null
-      ? `${minutosDeEspera(comanda, ahora)} MIN`
+      ? `${minutosDeEspera(linea, ahora)} MIN`
       : faltan >= 0
         ? `EN ${faltan} MIN`
         : `HACE ${-faltan} MIN`;

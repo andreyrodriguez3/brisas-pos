@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { aplicarDescuentos, calcularDescuento } from './descuentos';
 
+it('rechaza un tipo de descuento desconocido recibido en tiempo de ejecución', () => {
+  const descuento = { tipo: 'INVALIDO', valor: 100 } as unknown as Parameters<
+    typeof calcularDescuento
+  >[1];
+  expect(() => calcularDescuento(1_000, descuento)).toThrow(/Tipo de descuento desconocido/);
+});
+
 describe('calcularDescuento — MONTO', () => {
   it('descuenta los colones indicados', () => {
     expect(calcularDescuento(10_000, { tipo: 'MONTO', valor: 2_000 })).toBe(2_000);

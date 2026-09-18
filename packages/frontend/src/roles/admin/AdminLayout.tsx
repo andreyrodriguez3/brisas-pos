@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { NavLink, Route, Routes } from 'react-router-dom';
+import { Navigate, NavLink, Route, Routes } from 'react-router-dom';
 import { endpoints } from '../../shared/api/endpoints';
 import { useSesion } from '../../shared/estado/sesion';
 import { Cargando, Vacio } from '../../shared/ui/Cargando';
@@ -32,7 +32,11 @@ export function AdminLayout() {
           {SECCIONES.map((s) => (
             <NavLink
               key={s.a}
-              to={s.a}
+              // Absoluto por prevención, mismo motivo que en CajaLayout: hoy
+              // las 6 secciones son hermanas planas y esto no falla, pero un
+              // relativo se rompería en cuanto alguna gane una subruta con
+              // :id. Absoluto no tiene ese riesgo nunca.
+              to={`/admin/${s.a}`}
               end={s.a === ''}
               className={({ isActive }) =>
                 `rounded-lg px-3 py-2 text-sm font-medium ${
@@ -58,6 +62,9 @@ export function AdminLayout() {
           <Route path="reportes" element={<PantallaReportes />} />
           <Route path="auditoria" element={<PantallaAuditoria />} />
           <Route path="configuracion" element={<PantallaConfiguracion />} />
+          {/* Red de seguridad: una URL vieja o mal armada no debe dejar la
+              pantalla en blanco — vuelve al menú. */}
+          <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>
       </main>
     </div>

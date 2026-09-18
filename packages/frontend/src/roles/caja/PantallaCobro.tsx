@@ -86,6 +86,12 @@ export function PantallaCobro() {
         </p>
       </header>
 
+      {/* ── Extras que caja agrega directo, sin pasar por cocina ───────────── */}
+      {/* Igual que el resto de esta pantalla, solo mientras no haya pago
+          registrado: agregar una línea después movería el total que ya se
+          usó para calcular las partes. */}
+      {e.pagado === 0 && <AgregarExtra cuentaId={cuentaId} onListo={() => refrescar()} />}
+
       {/* ── Elegir la modalidad ───────────────────────────────────────────── */}
       {/* Una vez que hay un pago registrado, la división queda fija: cambiarla
           desordenaría a quién le corresponde cada pago ya hecho. */}
@@ -214,6 +220,101 @@ export function PantallaCobro() {
         }}
       />
     </div>
+  );
+}
+
+/**
+ * Cajetas, dulces sueltos: cosas que nadie manda a pedir por el flujo normal,
+ * pero que caja quiere poder sumar a la cuenta ahí mismo, al cobrar. Reusa
+ * `POST /pedidos` — el mismo que usa mesera — así hereda gratis el snapshot
+ * de precio y la auditoría; la única diferencia es que el producto viene
+ * marcado `va_a_cocina: false`, así que nunca aparece en la cola de cocina.
+ */
+function AgregarExtra({ cuentaId, onListo }: { cuentaId: number; onListo: () => void }) {
+  const menu = useQuery({ queryKey: ['menu'], queryFn: endpoints.menu.catalogo });
+  const [varianteId, setVarianteId] = useState<number | ''>('');
+  const [cantidad, setCantidad] = useState(1);
+
+  const extras = (menu.data ?? [])
+    .flatMap((cat) => cat.productos)
+    .filter((p) => !p.va_a_cocina)
+    .flatMap((p) =>
+      p.variantes.map((v) => ({
+        productoId: p.id,
+        varianteId: v.id,
+        etiqueta: v.etiqueta === 'Único' ? p.nombre_es : `${p.nombre_es} (${v.etiqueta})`,
+        precio: v.precio_colones ?? 0,
+      })),
+    );
+
+  const agregar = useMutation({
+    mutationFn: () => {
+      const elegido = extras.find((x) => x.varianteId === varianteId);
+      if (!elegido) throw new Error('Elegí un producto');
+      return endpoints.pedidos.enviar({
+        cuenta_id: cuentaId,
+        lineas: [
+          {
+            producto_id: elegido.productoId,
+            variante_id: elegido.varianteId,
+            cantidad,
+            opciones_ids: [],
+            nota: undefined,
+            para_llevar: false,
+          },
+        ],
+      });
+    },
+    onSuccess: () => {
+      setVarianteId('');
+      setCantidad(1);
+      onListo();
+    },
+  });
+
+  if (extras.length === 0) return null;
+
+  return (
+    <section className="tarjeta flex flex-wrap items-end gap-2">
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="font-medium text-slate-700">Agregar extra</span>
+        <select
+          value={varianteId}
+          onChange={(ev) => setVarianteId(ev.target.value === '' ? '' : Number(ev.target.value))}
+          className="min-h-boton-normal min-w-48 rounded-lg border border-slate-300 px-3"
+        >
+          <option value="">Elegí…</option>
+          {extras.map((x) => (
+            <option key={x.varianteId} value={x.varianteId}>
+              {x.etiqueta} — {formatearColones(x.precio)}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="font-medium text-slate-700">Cantidad</span>
+        <input
+          type="number"
+          min={1}
+          value={cantidad}
+          onChange={(ev) => setCantidad(Math.max(1, Number(ev.target.value)))}
+          className="min-h-boton-normal w-20 rounded-lg border border-slate-300 px-3 text-center"
+        />
+      </label>
+
+      <button
+        className="boton-secundario"
+        disabled={varianteId === '' || agregar.isPending}
+        onClick={() => agregar.mutate()}
+      >
+        Agregar
+      </button>
+
+      {agregar.isError && (
+        <p className="w-full text-sm text-red-700">{mensajeDeError(agregar.error)}</p>
+      )}
+    </section>
   );
 }
 

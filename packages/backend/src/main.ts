@@ -8,15 +8,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { NextFunction, Request, Response } from 'express';
 import { AppModule } from './app.module';
 import { FiltroExcepciones } from './common/excepciones.filter';
-
-/** ¿La IP es de una red privada? Es todo lo que el CORS de la LAN necesita saber. */
-function esIpPrivada(host: string): boolean {
-  if (host === 'localhost' || host === '127.0.0.1' || host === '::1') return true;
-  const m = /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/.exec(host);
-  if (!m) return false;
-  const [a, b] = [Number(m[1]), Number(m[2])];
-  return a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168);
-}
+import { origenCorsLan } from './common/origen-lan';
 
 /** IPs de la PC en la LAN, para imprimirlas al arrancar. */
 function ipsLocales(): string[] {
@@ -46,14 +38,7 @@ async function bootstrap() {
   // CORS abierto a la LAN: los dispositivos entran por IP privada, y el origen
   // cambia según qué IP tenga la PC ese día.
   app.enableCors({
-    origin: (origen, cb) => {
-      if (!origen) return cb(null, true); // apps instaladas, curl, health checks
-      try {
-        cb(null, esIpPrivada(new URL(origen).hostname));
-      } catch {
-        cb(null, false);
-      }
-    },
+    origin: origenCorsLan,
     credentials: true,
   });
 

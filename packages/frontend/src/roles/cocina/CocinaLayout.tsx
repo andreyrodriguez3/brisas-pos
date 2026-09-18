@@ -1,19 +1,19 @@
-import { EstadoPedido, type ComandaCocina } from '@brisas/shared';
+import { EstadoLinea, Rol, type LineaCocina } from '@brisas/shared';
 import { useEffect } from 'react';
 import { endpoints } from '../../shared/api/endpoints';
 import { useSesion } from '../../shared/estado/sesion';
 import { BannerSinConexion } from '../../shared/ui/BannerSinConexion';
 import { BarraDeshacer } from './BarraDeshacer';
 import { ControlVolumen } from './ControlVolumen';
-import { TarjetaComanda } from './TarjetaComanda';
+import { TarjetaPlatillo } from './TarjetaPlatillo';
 import { desbloquearAudio } from './sonido';
 import { useCola } from './useCola';
 
 /** Las tres columnas. Fijas: sin menús, sin pestañas, sin scroll horizontal. */
 const COLUMNAS = [
-  { estado: EstadoPedido.ENVIADO, titulo: 'NUEVOS', clase: 'bg-estado-nuevo' },
-  { estado: EstadoPedido.EN_PREPARACION, titulo: 'EN PREPARACIÓN', clase: 'bg-estado-preparacion' },
-  { estado: EstadoPedido.LISTO, titulo: 'LISTOS', clase: 'bg-estado-listo' },
+  { estado: EstadoLinea.ENVIADO, titulo: 'NUEVOS', clase: 'bg-estado-nuevo' },
+  { estado: EstadoLinea.EN_PREPARACION, titulo: 'EN PREPARACIÓN', clase: 'bg-estado-preparacion' },
+  { estado: EstadoLinea.LISTO, titulo: 'LISTOS', clase: 'bg-estado-listo' },
 ] as const;
 
 /**
@@ -31,16 +31,25 @@ const COLUMNAS = [
  *   · Palabras en español en los botones ("EMPEZAR", "LISTO"), no íconos sueltos.
  *   · Orden automático: lo que toca primero, arriba. Nadie busca nada.
  *   · Sin conexión: banner rojo grande y **lo ya recibido se queda en pantalla**.
+ *
+ * La unidad es el PLATILLO, no la comanda: con varias cocineras, cada una
+ * avanza los platillos que preparó sin esperar al resto del pedido. Los
+ * iguales quedan agrupados (`agruparPorPlatillo` en `shared`) para que una
+ * sola cocinera prepare de una todos los que haya de un mismo plato.
  */
 export function CocinaLayout() {
-  const { token, abrir } = useSesion();
+  const { usuario, abrir } = useSesion();
   const cola = useCola();
 
-  // La tablet arranca directo en la app y nunca pide contraseña.
+  // La tablet arranca directo en la app y nunca pide contraseña. Se pide un
+  // token propio de COCINA sin importar qué sesión hubiera guardada antes:
+  // `localStorage` se comparte entre pestañas del mismo navegador, y si esta
+  // pestaña heredó el token de una mesera o de caja logueada antes en el mismo
+  // equipo, cocina se quedaría pegada con 403 en vez de pedir el suyo.
   useEffect(() => {
-    if (token) return;
+    if (usuario?.rol === Rol.COCINA) return;
     endpoints.auth.cocina().then(abrir).catch(console.error);
-  }, [token, abrir]);
+  }, [usuario, abrir]);
 
   // El navegador no deja sonar nada hasta el primer toque de la usuaria. La
   // tablet vive encendida todo el día: basta con desbloquearlo una vez.
@@ -50,8 +59,8 @@ export function CocinaLayout() {
     return () => window.removeEventListener('pointerdown', alTocar);
   }, []);
 
-  const porEstado = (estado: EstadoPedido): ComandaCocina[] =>
-    cola.comandas.filter((c) => c.estado === estado);
+  const porEstado = (estado: EstadoLinea): LineaCocina[] =>
+    cola.lineas.filter((l) => l.estado === estado);
 
   return (
     <div className="escala-cocina flex h-dvh flex-col bg-slate-100">
@@ -74,7 +83,7 @@ export function CocinaLayout() {
 
       <div className="grid flex-1 grid-cols-3 gap-sep-cocina overflow-hidden px-4">
         {COLUMNAS.map((columna) => {
-          const comandas = porEstado(columna.estado);
+          const platillos = porEstado(columna.estado);
           return (
             <section
               key={columna.estado}
@@ -84,23 +93,23 @@ export function CocinaLayout() {
                 className={`${columna.clase} flex items-baseline justify-center gap-3 px-4 py-3 text-cocina-lg font-bold tracking-wide text-white`}
               >
                 {columna.titulo}
-                <span className="text-cocina-xs tabular-nums opacity-90">{comandas.length}</span>
+                <span className="text-cocina-xs tabular-nums opacity-90">{platillos.length}</span>
               </h2>
 
               <div className="flex-1 overflow-y-auto bg-white/80 p-3">
                 {cola.cargando ? (
                   <p className="p-4 text-center text-cocina-xs text-slate-400">Cargando…</p>
-                ) : comandas.length === 0 ? (
-                  <p className="p-4 text-center text-cocina-xs text-slate-400">Sin comandas</p>
+                ) : platillos.length === 0 ? (
+                  <p className="p-4 text-center text-cocina-xs text-slate-400">Sin platillos</p>
                 ) : (
-                  comandas.map((comanda) => (
-                    <TarjetaComanda
-                      key={comanda.pedido_id}
-                      comanda={comanda}
+                  platillos.map((linea) => (
+                    <TarjetaPlatillo
+                      key={linea.linea_id}
+                      linea={linea}
                       ahora={cola.ahora}
                       umbrales={cola.umbrales}
-                      parpadea={cola.recienLlegadas.has(comanda.pedido_id)}
-                      enVuelo={cola.enVuelo.has(comanda.pedido_id)}
+                      parpadea={cola.recienLlegadas.has(linea.pedido_id)}
+                      enVuelo={cola.enVuelo.has(linea.linea_id)}
                       onTocar={cola.avanzar}
                     />
                   ))

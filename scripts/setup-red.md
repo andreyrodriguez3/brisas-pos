@@ -1,5 +1,7 @@
 # Preparación de la red y los dispositivos
 
+> Para la instalación real con WiFi compartido con clientes, seguí [la guía de puesta en marcha de 2026](../docs/puesta-en-marcha-2026.md). Las IP `192.168.1.50` y el rango DHCP citados abajo son solo ejemplos: no se pueden asumir sin acceso al router. La instalación PWA tampoco está garantizada sobre HTTP desde una IP privada.
+
 Guía de instalación en sitio. Se hace **una sola vez**, con el restaurante cerrado, y se prueba antes de que llegue el primer cliente.
 
 ---

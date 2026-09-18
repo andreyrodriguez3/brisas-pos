@@ -1,5 +1,7 @@
 # Brisas POS
 
+> Para la PC real del restaurante, empezá por [puesta en marcha 2026](docs/puesta-en-marcha-2026.md) y [pruebas de aceptación](docs/pruebas-de-aceptacion.md). Las instrucciones históricas de IP fija y respaldo de este README no contemplan el WiFi compartido ni la ubicación actual de la base.
+
 Sistema de punto de venta para el **Restaurante Mirador Brisas del Monte** (Costa Rica).
 
 Tres pantallas conectadas en tiempo real por el WiFi del propio restaurante:

@@ -4,12 +4,14 @@ import { JwtService } from '@nestjs/jwt';
 import type { PayloadJwt } from '@brisas/shared';
 import type { Request } from 'express';
 import { CLAVE_PUBLICO } from './roles.decorator';
+import { AuthService } from './auth.service';
 
 @Injectable()
 export class JwtGuard implements CanActivate {
   constructor(
     private readonly jwt: JwtService,
     private readonly reflector: Reflector,
+    private readonly auth: AuthService,
   ) {}
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
@@ -24,7 +26,7 @@ export class JwtGuard implements CanActivate {
     if (!token) throw new UnauthorizedException('Sesión no iniciada');
 
     try {
-      req.usuario = await this.jwt.verifyAsync<PayloadJwt>(token);
+      req.usuario = await this.auth.validarSesion(await this.jwt.verifyAsync<PayloadJwt>(token));
       return true;
     } catch {
       throw new UnauthorizedException('La sesión venció. Volvé a entrar con tu PIN.');

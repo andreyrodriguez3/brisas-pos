@@ -45,7 +45,24 @@ $ErrorActionPreference = 'Stop'
 $RaizScript = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $Raiz = Split-Path -Parent $RaizScript
 
-if (-not $BaseDatos) { $BaseDatos = Join-Path $Raiz 'packages\backend\data\brisas.sqlite' }
+if (-not $BaseDatos) {
+  $envPath = Join-Path $Raiz 'packages\backend\.env'
+  if (-not (Test-Path -LiteralPath $envPath)) {
+    throw "No existe $envPath. Indicá -BaseDatos o configurá DATABASE_URL antes de restaurar."
+  }
+  $lineaUrl = Get-Content -LiteralPath $envPath | Where-Object { $_ -match '^\s*DATABASE_URL\s*=' } | Select-Object -Last 1
+  if (-not $lineaUrl) { throw "Falta DATABASE_URL en $envPath" }
+  $url = ($lineaUrl -replace '^\s*DATABASE_URL\s*=\s*', '').Trim().Trim('"', "'")
+  if ($url -notmatch '^file:(.+)$' -or $url.Contains('?')) {
+    throw 'DATABASE_URL debe ser file:<ruta SQLite> sin parámetros; indicá -BaseDatos si usás otra configuración.'
+  }
+  $rutaDb = $Matches[1]
+  if ($rutaDb -match '^[A-Za-z]:[/\\]') {
+    $BaseDatos = $rutaDb
+  } else {
+    $BaseDatos = [System.IO.Path]::GetFullPath((Join-Path (Join-Path $Raiz 'packages\backend\prisma') $rutaDb))
+  }
+}
 if (-not $CarpetaRespaldos) { $CarpetaRespaldos = Join-Path $Raiz 'respaldos' }
 
 function Escribir($mensaje) {
@@ -85,7 +102,11 @@ if (-not (Test-Path $Respaldo)) { throw "No existe el respaldo: $Respaldo" }
 
 Escribir "Verificando $Respaldo…"
 
-$cabecera = [System.IO.File]::ReadAllBytes($Respaldo)[0..15]
+$respaldoResuelto = (Resolve-Path -LiteralPath $Respaldo).Path
+$baseResuelta = [System.IO.Path]::GetFullPath($BaseDatos)
+if ($respaldoResuelto -eq $baseResuelta) { throw 'El respaldo y la base activa no pueden ser el mismo archivo.' }
+if ((Get-Item -LiteralPath $respaldoResuelto).Length -lt 16) { throw 'El respaldo es demasiado pequeño para ser SQLite.' }
+$cabecera = [System.IO.File]::ReadAllBytes($respaldoResuelto)[0..15]
 $texto = [System.Text.Encoding]::ASCII.GetString($cabecera)
 if ($texto -notlike 'SQLite format 3*') {
   throw "Ese archivo no es una base SQLite. No se restaura nada."
@@ -94,39 +115,42 @@ if ($texto -notlike 'SQLite format 3*') {
 # Sin `?.`: Windows 10 y 11 traen PowerShell 5.1 por defecto y ese operador es de la 7.
 $comandoSqlite = Get-Command sqlite3.exe -ErrorAction SilentlyContinue
 $sqlite3 = if ($comandoSqlite) { $comandoSqlite.Source } else { $null }
-if ($sqlite3) {
-  $chequeo = & $sqlite3 $Respaldo 'PRAGMA integrity_check;'
-  if ($chequeo -ne 'ok') { throw "integrity_check falló: $chequeo" }
-  $cuentas = & $sqlite3 $Respaldo 'SELECT COUNT(*) FROM cuenta;'
-  $productos = & $sqlite3 $Respaldo 'SELECT COUNT(*) FROM producto;'
-  Escribir "  integridad ok · $productos producto(s) · $cuentas cuenta(s)"
-} else {
-  Escribir "  cabecera ok (instalá sqlite3.exe para verificar la integridad completa)"
-}
+if (-not $sqlite3) { throw 'No se encontró sqlite3.exe; no se restaurará una base sin verificar su integridad.' }
+$chequeo = & $sqlite3 $respaldoResuelto 'PRAGMA integrity_check;'
+if ($LASTEXITCODE -ne 0 -or $chequeo -ne 'ok') { throw "integrity_check falló: $chequeo" }
+$cuentas = & $sqlite3 $respaldoResuelto 'SELECT COUNT(*) FROM cuenta;'
+if ($LASTEXITCODE -ne 0) { throw 'El respaldo no contiene una tabla cuenta válida.' }
+$productos = & $sqlite3 $respaldoResuelto 'SELECT COUNT(*) FROM producto;'
+if ($LASTEXITCODE -ne 0) { throw 'El respaldo no contiene una tabla producto válida.' }
+Escribir "  integridad ok · $productos producto(s) · $cuentas cuenta(s)"
 
 # ── Restaurar ───────────────────────────────────────────────────────────────
 
 $svc = Get-Service -Name $Servicio -ErrorAction SilentlyContinue
-if ($svc -and $svc.Status -eq 'Running') {
+if (-not $svc) { throw "No existe el servicio $Servicio. Para evitar escrituras simultáneas, restaurá solo con el servicio instalado." }
+if ($svc.Status -eq 'Running') {
   Escribir "Deteniendo $Servicio…"
   Stop-Service -Name $Servicio -Force
-  Start-Sleep -Seconds 3
+  (Get-Service -Name $Servicio).WaitForStatus('Stopped', [TimeSpan]::FromSeconds(30))
 } else {
-  Escribir "El servicio $Servicio no está corriendo (o no está instalado)."
+  Escribir "El servicio $Servicio ya está detenido."
 }
 
-if (Test-Path $BaseDatos) {
-  $aparte = "$BaseDatos.antes-de-restaurar_$(Get-Date -Format 'yyyy-MM-dd_HHmm')"
-  Move-Item $BaseDatos $aparte -Force
+if (Test-Path -LiteralPath $BaseDatos) {
+  $aparte = "$BaseDatos.antes-de-restaurar_$(Get-Date -Format 'yyyy-MM-dd_HHmmss')"
+  Move-Item -LiteralPath $BaseDatos -Destination $aparte
   Escribir "La base anterior quedó guardada en $aparte"
 }
-# Los -wal/-shm que hay ahora pertenecen a la base ANTERIOR: dejarlos encima de
-# la restaurada la corrompería.
+# El WAL de la base anterior también contiene ventas recientes. Conservarlo
+# junto a la base anterior permite recuperarla sin perder esas transacciones.
 foreach ($sufijo in '-wal', '-shm') {
-  if (Test-Path "$BaseDatos$sufijo") { Remove-Item "$BaseDatos$sufijo" -Force }
+  if (Test-Path -LiteralPath "$BaseDatos$sufijo") {
+    if (-not $aparte) { throw "Existe $BaseDatos$sufijo sin base principal: requiere revisión manual." }
+    Move-Item -LiteralPath "$BaseDatos$sufijo" -Destination "$aparte$sufijo"
+  }
 }
 
-Copy-Item $Respaldo $BaseDatos -Force
+Copy-Item -LiteralPath $respaldoResuelto -Destination $BaseDatos
 
 # ⚠️ Y ahora los del RESPALDO, si los tiene.
 #
@@ -136,8 +160,8 @@ Copy-Item $Respaldo $BaseDatos -Force
 # las últimas ventas — que en plena hora de almuerzo pueden ser todas.
 $conWal = $false
 foreach ($sufijo in '-wal', '-shm') {
-  if (Test-Path "$Respaldo$sufijo") {
-    Copy-Item "$Respaldo$sufijo" "$BaseDatos$sufijo" -Force
+  if (Test-Path -LiteralPath "$respaldoResuelto$sufijo") {
+    Copy-Item -LiteralPath "$respaldoResuelto$sufijo" -Destination "$BaseDatos$sufijo"
     $conWal = $true
   }
 }

@@ -5,6 +5,7 @@ import {
   EstadoCuenta,
   Rol,
   calcularTotalLinea,
+  estadoMenosAvanzado,
   type AbrirCuentaDto,
   type AnularCuentaDto,
   type EditarCuentaDto,
@@ -16,9 +17,6 @@ import { AuditoriaService } from '../auditoria/auditoria.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { TurnosService } from '../turnos/turnos.service';
-
-/** Orden de avance de una comanda: el mínimo es lo que la mesera está esperando. */
-const ORDEN_ESTADO: EstadoPedido[] = ['ENVIADO', 'EN_PREPARACION', 'LISTO', 'ENTREGADO'];
 
 const MESERA = { select: { id: true, nombre: true, color_hex: true } };
 
@@ -134,7 +132,7 @@ export class CuentasService {
         0,
       ),
       n_pedidos: c.pedidos.length,
-      estado_cocina: this.estadoMenosAvanzado(c.pedidos.map((p) => p.estado as EstadoPedido)),
+      estado_cocina: estadoMenosAvanzado(c.pedidos.map((p) => p.estado as EstadoPedido)),
       editada_por_terceros: editadas.has(c.id),
       pedidos: undefined,
     }));
@@ -343,14 +341,6 @@ export class CuentasService {
       throw new BadRequestException('Esta cuenta está anulada');
     }
     return cuenta;
-  }
-
-  /** El estado menos avanzado de las comandas: lo que la mesera está esperando. */
-  private estadoMenosAvanzado(estados: EstadoPedido[]): EstadoPedido | null {
-    if (estados.length === 0) return null;
-    return estados.reduce((min, e) =>
-      ORDEN_ESTADO.indexOf(e) < ORDEN_ESTADO.indexOf(min) ? e : min,
-    );
   }
 
   /**

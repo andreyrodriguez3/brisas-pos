@@ -8,6 +8,7 @@ import {
   type Variante,
 } from '@brisas/shared';
 import { create } from 'zustand';
+import { generarId } from '../../../shared/id';
 
 /** Un ítem del carrito, con lo necesario para pintarlo sin volver a buscar nada. */
 export interface ItemCarrito {
@@ -46,7 +47,7 @@ export const useCarrito = create<EstadoCarrito>((set) => ({
 
   agregar: (item) =>
     set((s) => ({
-      items: [...s.items, { ...item, clave: crypto.randomUUID() }],
+      items: [...s.items, { ...item, clave: generarId() }],
     })),
 
   cambiarCantidad: (clave, cantidad) =>

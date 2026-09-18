@@ -50,8 +50,8 @@ export class CobroService {
 
   // ── El estado de cobro ────────────────────────────────────────────────────
 
-  async estado(cuentaId: number): Promise<EstadoCobro> {
-    const cuenta = await this.cargar(cuentaId);
+  async estado(cuentaId: number, tx?: Prisma.TransactionClient): Promise<EstadoCobro> {
+    const cuenta = await this.cargar(cuentaId, tx);
 
     const lineas = cuenta.pedidos.flatMap((p) =>
       p.lineas
@@ -215,6 +215,7 @@ export class CobroService {
   async aplicarDescuento(cuentaId: number, dto: AplicarDescuentoDto, usuarioId: number) {
     await this.prisma.$transaction(async (tx) => {
       const cuenta = await this.exigirCobrable(tx, cuentaId);
+      await this.exigirSinPagos(tx, cuentaId);
 
       const creado = await tx.descuento.create({
         data: {
@@ -391,36 +392,33 @@ export class CobroService {
    * a la vista hasta completarse, y se cierra sola cuando no queda nada.
    */
   async registrarPago(cuentaId: number, dto: RegistrarPagoDto, usuarioId: number) {
-    const antes = await this.estado(cuentaId);
-
-    if (antes.estado === EstadoCuenta.COBRADA) {
-      throw new BadRequestException('Esta cuenta ya se cobró');
-    }
-    if (antes.estado === EstadoCuenta.ANULADA) {
-      throw new BadRequestException('Esta cuenta está anulada');
-    }
-    if (!antes.se_puede_cobrar) {
-      throw new BadRequestException(
-        `No se puede cobrar todavía: quedan ${antes.sin_asignar.length} línea(s) sin asignar a un comensal`,
-      );
-    }
-    if (antes.saldo === 0) {
-      throw new BadRequestException('Esta cuenta no tiene saldo pendiente');
-    }
-    if (dto.monto > antes.saldo) {
-      throw new BadRequestException(
-        `El pago es mayor que el saldo (${formatearColones(antes.saldo)}). Revisá el monto.`,
-      );
-    }
-
-    // Cocina sin entregar avisa pero no bloquea: la caja puede forzarlo, y el
-    // forzado queda auditado con su motivo.
-    const sinEntregar = antes.advertencias.find((a) => a.startsWith('Cocina'));
-    if (sinEntregar && !dto.forzar) {
-      throw new BadRequestException(`${sinEntregar}. Confirmá que querés cobrar igual.`);
-    }
-
     const { saldada } = await this.prisma.$transaction(async (tx) => {
+      // Tomar la escritura antes de leer saldo/estado serializa las peticiones
+      // concurrentes de caja sobre la conexión única de SQLite.
+      await this.reclamarCuenta(tx, cuentaId);
+      const antes = await this.estado(cuentaId, tx);
+
+      if (!antes.se_puede_cobrar) {
+        throw new BadRequestException(
+          `No se puede cobrar todavía: quedan ${antes.sin_asignar.length} línea(s) sin asignar a un comensal`,
+        );
+      }
+      if (antes.saldo === 0) {
+        throw new BadRequestException('Esta cuenta no tiene saldo pendiente');
+      }
+      if (dto.monto > antes.saldo) {
+        throw new BadRequestException(
+          `El pago es mayor que el saldo (${formatearColones(antes.saldo)}). Revisá el monto.`,
+        );
+      }
+
+      // Cocina sin entregar avisa pero no bloquea: la caja puede forzarlo, y el
+      // forzado queda auditado con su motivo.
+      const sinEntregar = antes.advertencias.find((a) => a.startsWith('Cocina'));
+      if (sinEntregar && !dto.forzar) {
+        throw new BadRequestException(`${sinEntregar}. Confirmá que querés cobrar igual.`);
+      }
+
       const division = await tx.division.findFirst({ where: { cuenta_id: cuentaId } });
 
       const pago = await tx.pago.create({
@@ -484,18 +482,16 @@ export class CobroService {
    * siempre.
    */
   async cerrar(cuentaId: number, usuarioId: number) {
-    const estado = await this.estado(cuentaId);
-
-    if (estado.estado === EstadoCuenta.COBRADA) {
-      throw new BadRequestException('Esta cuenta ya se cobró');
-    }
-    if (estado.saldo > 0) {
-      throw new BadRequestException(
-        `Todavía falta cobrar ${formatearColones(estado.saldo)}. Registrá el pago.`,
-      );
-    }
-
     await this.prisma.$transaction(async (tx) => {
+      await this.reclamarCuenta(tx, cuentaId);
+      const estado = await this.estado(cuentaId, tx);
+
+      if (estado.saldo > 0) {
+        throw new BadRequestException(
+          `Todavía falta cobrar ${formatearColones(estado.saldo)}. Registrá el pago.`,
+        );
+      }
+
       await tx.cuenta.update({
         where: { id: cuentaId },
         data: { estado: EstadoCuenta.COBRADA, cerrada_en: new Date() },
@@ -507,7 +503,8 @@ export class CobroService {
           cuenta_id: cuentaId,
           antes: { estado: estado.estado, saldo: estado.saldo },
           despues: { estado: EstadoCuenta.COBRADA },
-          motivo: estado.descuento > 0 ? 'Cerrada sin saldo (descuento o cortesía)' : 'Cerrada sin saldo',
+          motivo:
+            estado.descuento > 0 ? 'Cerrada sin saldo (descuento o cortesía)' : 'Cerrada sin saldo',
         },
         tx,
       );
@@ -519,8 +516,8 @@ export class CobroService {
 
   // ── Internos ──────────────────────────────────────────────────────────────
 
-  private async cargar(cuentaId: number) {
-    const cuenta = await this.prisma.cuenta.findUnique({
+  private async cargar(cuentaId: number, tx?: Prisma.TransactionClient) {
+    const cuenta = await (tx ?? this.prisma).cuenta.findUnique({
       where: { id: cuentaId },
       include: {
         descuentos: { orderBy: { creado_en: 'asc' } },
@@ -578,8 +575,26 @@ export class CobroService {
     const pagos = await tx.pago.count({ where: { cuenta_id: cuentaId } });
     if (pagos > 0) {
       throw new BadRequestException(
-        'Ya se registró un pago en esta cuenta; no se puede cambiar cómo se divide. Si hace falta corregir la asignación, anulá el pago primero.',
+        'Ya se registró un pago en esta cuenta; no se puede cambiar la división ni aplicar descuentos.',
       );
     }
+  }
+
+  private async reclamarCuenta(tx: Prisma.TransactionClient, cuentaId: number): Promise<void> {
+    const actualizada = await tx.cuenta.updateMany({
+      where: { id: cuentaId, estado: { in: [EstadoCuenta.ABIERTA, EstadoCuenta.EN_COBRO] } },
+      data: { estado: EstadoCuenta.EN_COBRO },
+    });
+    if (actualizada.count > 0) return;
+    const cuenta = await tx.cuenta.findUnique({
+      where: { id: cuentaId },
+      select: { estado: true },
+    });
+    if (!cuenta) throw new NotFoundException('No existe esa cuenta');
+    throw new BadRequestException(
+      cuenta.estado === EstadoCuenta.ANULADA
+        ? 'Esta cuenta está anulada'
+        : 'Esta cuenta ya se cobró',
+    );
   }
 }

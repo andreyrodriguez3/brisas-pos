@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ErrorApi } from '../../shared/api/cliente';
 import { endpoints } from '../../shared/api/endpoints';
+import { generarId } from '../../shared/id';
 import { useColaOffline, type PedidoPendiente } from './estado/colaOffline';
 
 export const CLAVES_MESERA = {
@@ -25,9 +26,9 @@ interface Enviar {
  * guardado y sale solo cuando vuelva la conexión.
  *
  * Un error de red deja el pedido en la cola para reintentar. Un error de
- * validación (el producto se agotó, la cuenta ya se está cobrando) lo saca: por
- * más que se reintente va a fallar igual, y dejarlo ahí haría que la mesera vea
- * un "pendiente" que nunca se va.
+ * validación inmediata queda en el carrito con error visible. Si el rechazo
+ * llega al vaciar la cola en segundo plano, se conserva hasta revisión humana:
+ * no se reintenta automáticamente ni desaparece sin avisar.
  */
 export function useEnviarPedido() {
   const cliente = useQueryClient();
@@ -45,7 +46,7 @@ export function useEnviarPedido() {
 
   const enviar = useCallback(
     async ({ cuenta_id, cuenta_nombre, lineas }: Enviar): Promise<'enviado' | 'encolado'> => {
-      const idempotencia_key = crypto.randomUUID();
+      const idempotencia_key = generarId();
       setError(null);
       setEnviando(true);
 
@@ -59,7 +60,9 @@ export function useEnviarPedido() {
         return 'enviado';
       } catch (e) {
         if (e instanceof ErrorApi && !e.esDeConexion) {
-          // El servidor lo rechazó por una razón que no se arregla reintentando.
+          // PantallaPedido conserva el carrito y muestra el error. No dejar
+          // otra copia rechazada en la cola: al corregir y tocar Enviar genera
+          // una petición nueva.
           quitar(idempotencia_key);
           setError(e.message);
           throw e;
@@ -86,24 +89,26 @@ export function useEnviarPedido() {
  */
 export function useProcesarCola() {
   const cliente = useQueryClient();
-  const { pendientes, quitar, marcarIntentoFallido } = useColaOffline();
+  const { pendientes, quitar, marcarIntentoFallido, rechazar, habilitarReintento } =
+    useColaOffline();
   const procesando = useRef(false);
+  const hayEnEspera = pendientes.some((p) => !p.rechazado);
 
   const procesar = useCallback(async () => {
     if (procesando.current) return;
     const cola = useColaOffline.getState().pendientes;
-    if (cola.length === 0) return;
+    if (cola.every((p) => p.rechazado)) return;
 
     procesando.current = true;
     try {
       for (const pendiente of cola) {
-        await intentar(pendiente, quitar, marcarIntentoFallido);
+        if (!pendiente.rechazado) await intentar(pendiente, quitar, marcarIntentoFallido, rechazar);
       }
       void cliente.invalidateQueries({ queryKey: CLAVES_MESERA.cuentas });
     } finally {
       procesando.current = false;
     }
-  }, [cliente, quitar, marcarIntentoFallido]);
+  }, [cliente, quitar, marcarIntentoFallido, rechazar]);
 
   useEffect(() => {
     void procesar();
@@ -113,21 +118,30 @@ export function useProcesarCola() {
 
     // Red de seguridad: el evento `online` no siempre dispara cuando el WiFi
     // sigue conectado pero el servidor no responde (el caso de la zona muerta).
-    const reloj = pendientes.length > 0 ? setInterval(() => void procesar(), 15_000) : undefined;
+    const reloj = hayEnEspera ? setInterval(() => void procesar(), 15_000) : undefined;
 
     return () => {
       window.removeEventListener('online', alVolverLaSenal);
       if (reloj) clearInterval(reloj);
     };
-  }, [procesar, pendientes.length]);
+  }, [procesar, hayEnEspera]);
 
-  return { pendientes, reintentar: procesar };
+  return {
+    pendientes,
+    reintentar: procesar,
+    reintentarRechazado: (key: string) => {
+      habilitarReintento(key);
+      void procesar();
+    },
+    descartar: quitar,
+  };
 }
 
 async function intentar(
   pendiente: PedidoPendiente,
   quitar: (key: string) => void,
   marcarIntentoFallido: (key: string, error: string) => void,
+  rechazar: (key: string, error: string) => void,
 ) {
   try {
     await endpoints.pedidos.enviar({
@@ -138,10 +152,9 @@ async function intentar(
     quitar(pendiente.idempotencia_key);
   } catch (e) {
     if (e instanceof ErrorApi && !e.esDeConexion) {
-      // Rechazo definitivo: sacarlo de la cola y dejar constancia del motivo.
-      // (El pedido se pierde, pero la alternativa es un "pendiente" eterno.)
-      quitar(pendiente.idempotencia_key);
-      console.error('Pedido rechazado por el servidor:', e.message, pendiente);
+      // No perder silenciosamente una comanda. Queda visible hasta que la
+      // mesera la revise; no se reintenta sola porque repetiría el mismo error.
+      rechazar(pendiente.idempotencia_key, e.message);
       return;
     }
     marcarIntentoFallido(pendiente.idempotencia_key, 'Sin conexión');

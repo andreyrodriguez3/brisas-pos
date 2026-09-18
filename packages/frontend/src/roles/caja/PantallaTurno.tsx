@@ -106,6 +106,26 @@ export function PantallaTurno() {
         </button>
       </header>
 
+      {/*
+        El turno abierto es de un día anterior: nadie cerró el día pasado y el
+        sistema, sin frenar a nadie, lo siguió reusando — es la reutilización
+        automática funcionando como debe, no un error. Pero conviene que caja
+        lo note antes de que se sigan mezclando más ventas de hoy con las de
+        ese turno viejo.
+      */}
+      {t.es_de_otro_dia && (
+        <section className="tarjeta border-red-300 bg-red-50">
+          <h2 className="font-semibold text-red-900">
+            Este turno quedó abierto del {t.turno.fecha}
+          </h2>
+          <p className="text-sm text-red-900">
+            Nadie cerró ese día. Todo lo que se venda ahora se va a seguir sumando a ese turno
+            viejo hasta que se cierre — conviene resolver las cuentas pendientes de abajo y cerrar
+            el día cuanto antes.
+          </p>
+        </section>
+      )}
+
       {/* ── Lo que va vendido, en las tres bolsas ─────────────────────────── */}
       <section className="grid gap-3 sm:grid-cols-3">
         <Bolsa titulo="Salón" detalle="atribuible a las meseras" monto={t.totalizadores.salon} />

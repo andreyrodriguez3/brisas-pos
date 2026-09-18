@@ -12,6 +12,8 @@ export interface PedidoPendiente {
   encolado_en: string;
   intentos: number;
   ultimo_error?: string;
+  /** Un rechazo del servidor requiere revisión humana; nunca se borra solo. */
+  rechazado?: boolean;
 }
 
 interface EstadoCola {
@@ -19,6 +21,8 @@ interface EstadoCola {
   encolar: (pedido: Omit<PedidoPendiente, 'intentos' | 'encolado_en'>) => void;
   quitar: (key: string) => void;
   marcarIntentoFallido: (key: string, error: string) => void;
+  rechazar: (key: string, error: string) => void;
+  habilitarReintento: (key: string) => void;
 }
 
 /**
@@ -45,7 +49,10 @@ export const useColaOffline = create<EstadoCola>()(
 
       encolar: (pedido) =>
         set((s) => ({
-          pendientes: [...s.pendientes, { ...pedido, intentos: 0, encolado_en: new Date().toISOString() }],
+          pendientes: [
+            ...s.pendientes,
+            { ...pedido, intentos: 0, encolado_en: new Date().toISOString() },
+          ],
         })),
 
       quitar: (key) =>
@@ -57,6 +64,22 @@ export const useColaOffline = create<EstadoCola>()(
             p.idempotencia_key === key
               ? { ...p, intentos: p.intentos + 1, ultimo_error: error }
               : p,
+          ),
+        })),
+
+      rechazar: (key, error) =>
+        set((s) => ({
+          pendientes: s.pendientes.map((p) =>
+            p.idempotencia_key === key
+              ? { ...p, intentos: p.intentos + 1, ultimo_error: error, rechazado: true }
+              : p,
+          ),
+        })),
+
+      habilitarReintento: (key) =>
+        set((s) => ({
+          pendientes: s.pendientes.map((p) =>
+            p.idempotencia_key === key ? { ...p, rechazado: false, ultimo_error: undefined } : p,
           ),
         })),
     }),

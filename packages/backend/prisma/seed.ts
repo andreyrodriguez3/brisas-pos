@@ -50,6 +50,7 @@ interface ProductoSeed {
   grupos_opcion?: string[];
   activo?: boolean;
   es_envase?: boolean;
+  va_a_cocina?: boolean;
   nota?: string;
 }
 
@@ -173,6 +174,7 @@ async function sembrarMenu(menu: MenuSeed, gruposPorCodigo: Map<string, number>)
           descripcion: p.descripcion ?? null,
           orden: i,
           es_envase: p.es_envase ?? false,
+          va_a_cocina: p.va_a_cocina ?? true,
           activo,
         },
         create: {
@@ -182,6 +184,7 @@ async function sembrarMenu(menu: MenuSeed, gruposPorCodigo: Map<string, number>)
           descripcion: p.descripcion ?? null,
           orden: i,
           es_envase: p.es_envase ?? false,
+          va_a_cocina: p.va_a_cocina ?? true,
           activo,
         },
       });

@@ -133,10 +133,23 @@ export class TurnosService {
       throw new BadRequestException('La tablet de cocina no es una mesera del turno');
     }
 
-    const yaEsta = await this.prisma.turnoMesera.findFirst({
-      where: { turno_id: turno.id, usuario_id: dto.usuario_id, hora_salida: null },
+    // ⚠️ Sin filtrar por hora_salida: (turno_id, usuario_id) es único en la
+    // base, así que una mesera que ya salió de este turno NO se puede volver
+    // a agregar — el modelo es un alta y una baja por turno, no varios ciclos
+    // de entrada/salida. Si esto se buscara solo entre las activas (hora_salida
+    // null), el intento de volver a agregarla pasaría este chequeo y reventaría
+    // más abajo contra la restricción única de la base, con un mensaje crudo
+    // de Prisma en vez de uno que la cajera entienda.
+    const yaEstuvo = await this.prisma.turnoMesera.findFirst({
+      where: { turno_id: turno.id, usuario_id: dto.usuario_id },
     });
-    if (yaEsta) throw new BadRequestException(`${usuario.nombre} ya está en el turno`);
+    if (yaEstuvo) {
+      throw new BadRequestException(
+        yaEstuvo.hora_salida
+          ? `${usuario.nombre} ya salió de este turno y no se puede volver a agregar en el mismo día.`
+          : `${usuario.nombre} ya está en el turno.`,
+      );
+    }
 
     const entrada = dto.hora_entrada ? new Date(dto.hora_entrada) : new Date();
 
@@ -212,6 +225,7 @@ export class TurnosService {
         cuentas_sin_resolver: [],
         totalizadores: { salon: 0, para_llevar: 0, envases: 0 },
         puede_cerrar: false,
+        es_de_otro_dia: false,
       };
     }
 
@@ -265,6 +279,10 @@ export class TurnosService {
       cuentas_sin_resolver: sinResolver,
       totalizadores,
       puede_cerrar: sinResolver.length === 0,
+      // No frena nada — el turno se sigue reusando igual, es la reutilización
+      // automática ya documentada funcionando como debe. Es solo el aviso
+      // para que caja note que conviene cerrar el día antes de seguir.
+      es_de_otro_dia: turno.fecha !== diaLocal(),
     };
   }
 

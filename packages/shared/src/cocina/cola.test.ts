@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  agruparPorPlatillo,
+  estadoMenosAvanzado,
   minutosDeEspera,
   minutosParaRetiro,
   momentoDeReferencia,
@@ -11,16 +13,23 @@ import {
 const T = (hhmm: string) => new Date(`2026-08-06T${hhmm}:00.000Z`).getTime();
 const iso = (hhmm: string) => new Date(T(hhmm)).toISOString();
 
-const salon = (consecutivo: number, entrada: string) => ({
+const salon = (consecutivo: number, entrada: string, esAgregado = false) => ({
   consecutivo_dia: consecutivo,
   creado_en: iso(entrada),
   hora_retiro: null,
+  es_agregado: esAgregado,
 });
 
-const paraLlevar = (consecutivo: number, entrada: string, retiro: string) => ({
+const paraLlevar = (
+  consecutivo: number,
+  entrada: string,
+  retiro: string,
+  esAgregado = false,
+) => ({
   consecutivo_dia: consecutivo,
   creado_en: iso(entrada),
   hora_retiro: iso(retiro),
+  es_agregado: esAgregado,
 });
 
 describe('momentoDeReferencia', () => {
@@ -53,6 +62,30 @@ describe('ordenarCola', () => {
   it('los empates se rompen por número de comanda: la lista no baila', () => {
     const cola = ordenarCola([salon(7, '12:00'), salon(4, '12:00'), salon(5, '12:00')]);
     expect(cola.map((c) => c.consecutivo_dia)).toEqual([4, 5, 7]);
+  });
+
+  it('una comanda agregada recién creada va antes que una nueva que lleva más esperando', () => {
+    // La mesa 2 ya está comiendo y pidió algo más: no debe hacer fila detrás
+    // de una mesa nueva que entró antes pero todavía no tiene nada en camino.
+    const cola = ordenarCola([
+      salon(1, '12:00'),
+      salon(2, '12:20', true),
+    ]);
+    expect(cola.map((c) => c.consecutivo_dia)).toEqual([2, 1]);
+  });
+
+  it('entre dos comandas agregadas, se respeta el orden por tiempo y consecutivo de siempre', () => {
+    const cola = ordenarCola([
+      salon(3, '12:10', true),
+      salon(1, '12:00', true),
+      salon(2, '12:00', true),
+    ]);
+    expect(cola.map((c) => c.consecutivo_dia)).toEqual([1, 2, 3]);
+  });
+
+  it('entre dos comandas nuevas, el orden sigue igual que siempre (sin agregados de por medio)', () => {
+    const cola = ordenarCola([salon(2, '12:15'), salon(1, '12:00')]);
+    expect(cola.map((c) => c.consecutivo_dia)).toEqual([1, 2]);
   });
 
   it('no muta el arreglo que recibe', () => {
@@ -112,6 +145,75 @@ describe('urgenciaDeComanda — salón: cuánto lleva esperando', () => {
   it('respeta los umbrales de configuración', () => {
     expect(urgenciaDeComanda(comanda, T('12:06'), { alerta: 5, urgente: 12 })).toBe('alerta');
     expect(urgenciaDeComanda(comanda, T('12:13'), { alerta: 5, urgente: 12 })).toBe('urgente');
+  });
+});
+
+describe('agruparPorPlatillo', () => {
+  const p = (nombre: string, etiqueta: string | null = null) => ({
+    producto_nombre: nombre,
+    variante_etiqueta: etiqueta,
+  });
+
+  it('junta platillos iguales, conservando la posición del primero que apareció', () => {
+    const orden = [p('Casado'), p('Arroz con camarón'), p('Casado'), p('Arroz con camarón')];
+    const agrupado = agruparPorPlatillo(orden);
+    expect(agrupado).toEqual([
+      p('Casado'),
+      p('Casado'),
+      p('Arroz con camarón'),
+      p('Arroz con camarón'),
+    ]);
+  });
+
+  it('un platillo con variantes distintas NO se junta con otras presentaciones', () => {
+    const orden = [p('Cordon Bleu', 'Pequeño'), p('Cordon Bleu', 'Grande'), p('Cordon Bleu', 'Pequeño')];
+    const agrupado = agruparPorPlatillo(orden);
+    expect(agrupado).toEqual([
+      p('Cordon Bleu', 'Pequeño'),
+      p('Cordon Bleu', 'Pequeño'),
+      p('Cordon Bleu', 'Grande'),
+    ]);
+  });
+
+  it('no reordena entre grupos: el grupo va donde apareció su primer integrante', () => {
+    // "Casado" apareció primero (índice 0), "Chifrijo" después (índice 1):
+    // el grupo de Casado tiene que seguir yendo antes que el de Chifrijo,
+    // aunque Chifrijo tenga más unidades.
+    const orden = [p('Casado'), p('Chifrijo'), p('Chifrijo'), p('Chifrijo')];
+    const agrupado = agruparPorPlatillo(orden);
+    expect(agrupado.map((x) => x.producto_nombre)).toEqual([
+      'Casado',
+      'Chifrijo',
+      'Chifrijo',
+      'Chifrijo',
+    ]);
+  });
+
+  it('una lista vacía no explota', () => {
+    expect(agruparPorPlatillo([])).toEqual([]);
+  });
+});
+
+describe('estadoMenosAvanzado', () => {
+  it('devuelve el único estado cuando hay uno solo', () => {
+    expect(estadoMenosAvanzado(['LISTO'])).toBe('LISTO');
+  });
+
+  it('el pedido sigue EN_PREPARACION si una línea ya está LISTA y otra no', () => {
+    expect(estadoMenosAvanzado(['LISTO', 'EN_PREPARACION'])).toBe('EN_PREPARACION');
+  });
+
+  it('el pedido está ENTREGADO solo cuando TODAS sus líneas lo están', () => {
+    expect(estadoMenosAvanzado(['ENTREGADO', 'ENTREGADO'])).toBe('ENTREGADO');
+    expect(estadoMenosAvanzado(['ENTREGADO', 'LISTO'])).toBe('LISTO');
+  });
+
+  it('el orden de la lista no importa: siempre gana el menos avanzado', () => {
+    expect(estadoMenosAvanzado(['ENTREGADO', 'ENVIADO', 'LISTO'])).toBe('ENVIADO');
+  });
+
+  it('una lista vacía devuelve null: no hay nada de qué hablar', () => {
+    expect(estadoMenosAvanzado([])).toBeNull();
   });
 });
 
